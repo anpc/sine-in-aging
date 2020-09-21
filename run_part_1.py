@@ -5,9 +5,12 @@ from organized_all import run_part_1
 import sys
 
 # TODO decide what command line params we need
-[merged_input_fname, sine_name, output_dir, mode] = sys.argv[1:]
-
-run_all(merged_input_fname, sine_name, output_dir, int(mode))
+if len(sys.argv[1:]) == 5:
+	[merged_input_fname, sine_name, output_dir, mode, lenght] = sys.argv[1:]
+	run_all(merged_input_fname, sine_name, output_dir, int(mode), int(lenght))
+else:
+	[merged_input_fname, sine_name, output_dir, mode] = sys.argv[1:]
+	run_all(merged_input_fname, sine_name, output_dir, int(mode))
 
 # run_all("/media/sf_gene/unified/wt-lung_unified_001.fastq.gz",
 #         "/media/sf_gene/original/B1.fasta",
