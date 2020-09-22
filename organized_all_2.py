@@ -1312,7 +1312,9 @@ def new_SINES_filter_proc_graph(recs, main_dict, key_size, fuzziness):
         # if recs is None:
         #     q.put(None)
         #     break
-        for rec in recs:
+        graph_file = "graph"
+        for i,rec in enumerate(recs):
+
             str_barc = str(rec.seq)
             G.add_node((rec.seq, rec.id))
             re = tre.compile(str_barc, tre.EXTENDED)
@@ -1322,11 +1324,20 @@ def new_SINES_filter_proc_graph(recs, main_dict, key_size, fuzziness):
             for rec_part in barc_parts_list:
                 match = is_match_barcodes_graph(main_dict[str(rec_part.seq)], rec.id, re, fuzziness, match)  # create the match
 
-            print(type(match))
-            print("this is match: ", match)
+            # print(type(match))
+            # print("this is match: ", match)
             for m in match:
                 G.add_edge((rec.seq, rec.id), (m[0], tuple(m[1])))  # create a edge between the barcode and its...
 
+            if i%100 == 0:
+                print((i / 1916278) *100, "%")
+                outfile = open(graph_file, 'wb')
+                pickle.dump(G, outfile)             # enter the graph to the file
+
+
+        outfile = open(graph_file, 'wb')
+        pickle.dump(G, outfile)
+        outfile.close()
         # q.put((rec, match))
         nx.draw(G)
         plt.show()
