@@ -3,7 +3,7 @@
 # Fail on errors, so-called "bash strict mode"
 set -e -u -o pipefail
 
-python3.6 -m pip install --user biopython
+python3.6 -m pip install --user 'biopython == 1.77'
 python3.6 -m pip install --user zstandard
 python3.6 -m pip install --user tqdm
 
