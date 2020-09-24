@@ -10,11 +10,21 @@ python3.6 -m pip install --user tqdm
 # Install tre regexp-up-to-edit-distance library
 sudo apt-get update
 sudo apt-get install --yes agrep libtre-dev git
-git clone https://github.com/ahomansikka/tre
+if ! [ -d tre ]; then
+  git clone https://github.com/ahomansikka/tre
+fi
 (
     cd tre/python3
     python3.6 setup.py install --user
 )
 
+python3.6 -m pip install --user sklearn
+# Cython needed for compiling scikit-learn-extra
+python3.6 -m pip install --user Cython
+python3.6 -m pip install --user scikit-learn-extra
+
+sudo apt-get install --yes progress
+
 # the GNU `parallel` tool
 sudo apt-get install --yes parallel
+
