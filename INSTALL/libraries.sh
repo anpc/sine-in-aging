@@ -24,7 +24,7 @@ python3.6 -m pip install --user Cython
 python3.6 -m pip install --user scikit-learn-extra
 
 sudo apt-get install --yes progress
+sudo apt-get install --yes htop
 
 # the GNU `parallel` tool
 sudo apt-get install --yes parallel
-
