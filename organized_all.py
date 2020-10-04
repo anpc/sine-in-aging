@@ -36,25 +36,6 @@ from tqdm import tqdm
 import os
 from gene_lib import *
 
-#log(open_any("/media/sf_gene/original/B1.fasta", "rt"))
-#log(open_any("/media/sf_gene/original/wt-lung_R1_001.fastq.gz", "rt"))
-#log(open_any("/media/sf_gene/unified/wt-lung_unified_001.fastq.bz2", "r"))
-#log(open_any("/media/sf_gene/unified/wt-lung_unified_001.fastq.bz2.blabla", "rt"))
-
-
-#sys.exit()
-
-# creates gzip file from bz2 file:
-def bz2_to_gzip(in_bz2, out_gzip):
-    with bz2.BZ2File('/media/sf_gene/10k_data/unified_10k.fastq.bz2', 'rb') as \
-            f_in, gzip.open('/media/sf_gene/10k_data/unified_10k.fastq.gz', 'wb') as f_out:
-        shutil.copyfileobj(f_in, f_out)
-
-#creates gzip file from txt file:
-def txt_to_gzip(in_txt, out_gzip):
-    with open('/media/sf_gene/50Mill_consolidate.fastq', 'rb') as\
-            f_in, gzip.open('/media/sf_gene/50Mill_consolidate.fastq.gz', 'wb') as f_out:
-        shutil.copyfileobj(f_in, f_out)
 
 ############## part 1 ##############
 

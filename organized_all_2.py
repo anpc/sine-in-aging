@@ -39,19 +39,6 @@ import os
 from gene_lib import *
 
 
-# creates gzip file from bz2 file:
-def bz2_to_gzip(in_bz2, out_gzip):
-    with bz2.BZ2File('/media/sf_gene/10k_data/unified_10k.fastq.bz2', 'rb') as \
-            f_in, gzip.open('/media/sf_gene/10k_data/unified_10k.fastq.gz', 'wb') as f_out:
-        shutil.copyfileobj(f_in, f_out)
-
-
-# creates gzip file from txt file:
-def txt_to_gzip(in_txt, out_gzip):
-    with open('/media/sf_gene/50Mill_consolidate.fastq', 'rb') as \
-            f_in, gzip.open('/media/sf_gene/50Mill_consolidate.fastq.gz', 'wb') as f_out:
-        shutil.copyfileobj(f_in, f_out)
-
 
 ############## part 1 ##############
 
