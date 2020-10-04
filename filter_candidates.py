@@ -31,7 +31,7 @@ def filter_potential_sines(in_fname, sine_string, sine_header=67, maxerr=19):
                 SeqIO.write(rec, sys.stdout, 'fastq')
 
 # Writes to stdout, uncompresed
-[sine_fname, merged_input_fname] = sys.argv[1:]
-log('About to screen', merged_input_fname, 'for', sine_fname)
+[sine_fname, merged_input_fname, header_len, max_error] = sys.argv[1:]
+log('About to screen', merged_input_fname, 'for', sine_fname, header_len, max_error)
 sine = gene_lib.get_sine_forward(sine_fname) #"B1.fasta"
-filter_potential_sines(merged_input_fname, sine)
+filter_potential_sines(merged_input_fname, sine, int(header_len), int(max_error))
