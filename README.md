@@ -122,7 +122,7 @@ But it's better not to filter with exact params we want, but first take a **crud
 Motivation: simply reading & decompressing the full ~60GB takes hours.  By allowing say edit distance up to 19, we're already reducing the input size by 2 orders of magnitude, and reading that takes less than a minute!  That means once we do this filtering, we can upload it to AWS S3 and later experiment with more precise thresholds.
 
 ```bash
-seq 0 35 | parallel --jobs=-2 --eta --joblog=Young-liver/filter.joblog './filter_candidates.py B1.fasta Young-liver/wt-liver_merged.part{}e8.fastq.gz | gzip --stdout -2 > Young-liver/wt-liver_merged-candidates.part{}e8.fastq.gz'
+seq 0 35 | parallel --jobs=-2 --eta --joblog=Young-liver/filter.joblog './filter_candidates.py B1.fasta Young-liver/wt-liver_merged.part{}e8.fastq.gz 67 19 | gzip --stdout -2 > Young-liver/wt-liver_merged-candidates.part{}e8.fastq.gz'
 ```
 
 TODO: also do B2, B4, reverse_complement.
