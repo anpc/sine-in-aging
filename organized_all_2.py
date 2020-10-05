@@ -42,34 +42,6 @@ from gene_lib import *
 
 ############## part 1 ##############
 
-def filter_potential_sines_and_locations_proc(q, re, fuzziness):
-    while True:
-        recs = q.get()
-        # log(rec)
-
-        if recs is None:
-            break
-
-        for rec in recs:
-            match = re.search(str(rec.seq), fuzziness)
-            if match:
-                # log(rec.seq)
-                sine_location = match.groups()  # returns tuple of tuples (in this case: ((2,78), ) for example
-
-                q.put((rec, sine_location))
-
-
-def filter_potential_sines_and_locations_write(q, handle_write_sine, handle_write_loc):
-    while not q.empty():
-        (rec, sine_location) = q.get()
-
-        gene_record_write(rec, handle_write_sine, 'fasta')
-        handle_write_loc.write(",".join([str(i) for i in sine_location[0]]) + "\n")
-
-    handle_write_sine.flush()
-    handle_write_loc.flush()
-
-
 # this function gets fastq unify file (unify of R1 and R2 fastq files) in addition it gets a sine file
 # (contains one of the sines B1 or B2 or B4), sine_header=67 and maxerr=14.
 # for every record in the unify file it checks if it contains the current sine (the one in the sine file)
@@ -81,99 +53,19 @@ def filter_potential_sines_and_locations(in_file_unify, in_file_sine, out_file_w
     re = tre.compile(sine[:sine_header], tre.EXTENDED)
     fuzziness = tre.Fuzzyness(maxerr=maxerr)
 
-    # Create slave processes
-    procs = []
-    for _ in range(multiprocessing.cpu_count() - 3):
-        # Create a communication queue between this process and slave process
-        q = GeneDQueue()
-
-        # Create and start slave process
-        p = Process(target=filter_potential_sines_and_locations_proc, args=(q, re, fuzziness))
-        p.start()
-
-        procs.append({
-            'p': p,
-            'q': q,
-            'batch': [],
-            'write_i': 0
-        })
 
     with open_any(in_file_unify, "rt") as handle_read, \
             open_any(out_file_with_sine, "wt") as handle_write_sine, \
             open_any(out_file_location, "wt") as handle_write_loc:
 
         records = gene_records_parse(handle_read)
-        rec_i = 0
 
         for rec in tqdm(records, miniters=100):
-            # Simple round-robin between the slave processes
-            proc = procs[rec_i % len(procs)]
-
-            # Add a new record into a local batch array of slave process
-            proc['batch'].append(rec)
-
-            if len(proc['batch']) >= 20:
-                # Get found potential sine from slave process queue
-                #
-                # Optimization:
-                # Don't check the slave queue every iteration, as the check slows down.
-                # Moreover we won't get a potential sine for every record.
-                if proc['write_i'] > 3:
-                    filter_potential_sines_and_locations_write(proc['q'], handle_write_sine, handle_write_loc)
-                    proc['write_i'] = 0
-                else:
-                    proc['write_i'] += 1
-
-                # Put batch of new records into slave process queue
-                proc['q'].put(proc['batch'])
-
-                # Reset local batch of slave process
-                proc['batch'] = []
-
-            # Uncomment for testing a small amount of records
-            # if rec_i == 100000:
-            #     break
-
-            rec_i += 1
-
-        # Cleanup slave processes
-        for proc in procs:
-            # Get found potential sine from slave process queue, before last batch
-            filter_potential_sines_and_locations_write(proc['q'], handle_write_sine, handle_write_loc)
-
-            # Put last batch, if avaliable
-            if len(proc['batch']):
-                proc['q'].put(proc['batch'])
-                proc['batch'] = []
-
-            # Make slave proccess terminate
-            proc['q'].put(None)
-
-            # Wait for termination
-            proc['p'].join()
-
-            # Get found potential sine from slave process queue, very last time
-            filter_potential_sines_and_locations_write(proc['q'], handle_write_sine, handle_write_loc)
-
-
-# def filter_potential_sines_and_locations(in_file_unify, in_file_sine, out_file_with_sine, out_file_location, sine_header=67, maxerr=14):
-#     sine = gene_lib.get_sine_forward(in_file_sine) #"B1.fasta"
-#     re = tre.compile(sine[:sine_header], tre.EXTENDED)
-#     fuzziness = tre.Fuzzyness(maxerr=maxerr)
-#     with open_any(in_file_unify, "rt") as handle_read:
-#         records = gene_records_parse(handle_read, "fastq")
-#         with open_any(out_file_with_sine, "wt") as handle_write_sine,\
-#             open_any(out_file_location, "wt") as handle_write_loc:
-#             for rec in tqdm(records):
-#                 match = re.search(str(rec.seq), fuzziness)
-#                 if match:
-#                     gene_record_write(rec, handle_write_sine, 'fastq')
-#                     sine_location = match.groups() #returns tuple of tuples (in this case: ((2,78),
-
-
-# filter_potential_sines_and_locations('/media/sf_gene/10k_data/unified_10k.fastq.gz', 'B1.fasta',
-#                                      '/media/sf_gene/10k_data/unif10k_withSine.fastq.gz',
-#                                      '/media/sf_gene/10k_data/unif10k_sineLocation.fastq.gz')
+            match = re.search(str(rec.seq), fuzziness)
+            if match:
+                sine_location = match.groups()
+                gene_record_write(rec, handle_write_sine, 'fasta')
+                handle_write_loc.write(",".join([str(i) for i in sine_location[0]]) + "\n")
 
 
 # this function gets a len of barcode and two files:
