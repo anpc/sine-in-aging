@@ -1,3 +1,4 @@
+
 # import gzip
 # import io
 # import gzip
@@ -830,7 +831,7 @@ import io
 import gzip
 import shutil
 import tre
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import networkx as nx
 from networkx import Graph
 from itertools import product, repeat
@@ -1180,10 +1181,7 @@ def build_dictionary_for_histogram(in_file_prefix, out_file_dict, sine_barcode_l
             for rec_part in barcode_wins(rec, main_key_len):
                 str_barc_part = str(rec_part.seq)
                 sec_dict = main_dict[str_barc_part]
-                if sec_dict.get(str_barc) is None:
-                    sec_dict[str_barc] = [rec.id]
-                else:
-                    sec_dict[str_barc].append(rec.id)
+                sec_dict[str_barc] = [rec.id]
 
     print_step("Start build_dictionary: write to file")
     print("Peak memory (MiB):",
@@ -1224,19 +1222,34 @@ def is_match_barcodes_hist(sec_dict, barcode_id, re, fuzziness, match):
             # log(len(val),len(match))
 
 def is_match_barcodes_graph(sec_dict, barcode_id, re, fuzziness, match):
-    for key, id in sec_dict.items():
+    for barcode, id in sec_dict.items():
         is_exist = False
-        if re.search(str(key), fuzziness):
-            for m in match:                         # run over the match tuple
-                if is_exist == False:               # if we didn't found any appearance of id[1] in match
-                    for i in m[1]:                  # run over the id list that connect to the barcode
-                        if id[0] == i:              # if the id [0] is in match
-                            is_exist = True
-                            break
-            if is_exist == False:                   # when there is not val[0] in match
-                temp = (key, id)                    # create node to insert to match
+        if re.search(str(barcode), fuzziness):
+ #for barcodes in match:                         # run over the match tuple
+#  if is_exist == False:               # if we didn't found any appearance of id[1] in match
+#for barcode in idList[1]:                  # run over the id list that connect to the barcode
+# if the id [0] is in match
+            if barcode not in [x[0] for x in match]:
+# is_exist = True
+#break
+# if is_exist == False:                   # when there is not val[0] in match
+                temp = (barcode, id)                    # create node to insert to match
                 match = match + (temp,)             # add the node to the match tuple
     return match
+
+#    for key, id in sec_dict.items():
+#       is_exist = False
+#        if re.search(str(key), fuzziness):
+#           for m in match:                         # run over the match tuple
+#                if is_exist == False:               # if we didn't found any appearance of id[1] in match
+#                    for i in m[1]:                  # run over the id list that connect to the barcode
+#                        if id[0] == i:              # if the id [0] is in match
+#                            is_exist = True
+#                            break
+#            if is_exist == False:                   # when there is not val[0] in match
+#                temp = (key, id)                    # create node to insert to match
+#                match = match + (temp,)             # add the node to the match tuple
+#   return match
 
             # log(len(val),len(match))
 
@@ -1303,47 +1316,35 @@ def new_SINES_filter_proc_histogram(q, main_dict, key_size, fuzziness):
 # the same as the previous function,
 # only here the match is a list of all the barcodes id that close to the barcode
 def new_SINES_filter_proc_graph(recs, main_dict, key_size, fuzziness):
-    while True:
-        # recs = q.get()
-        # log(rec)
-
-        G = nx.Graph()                          # crete an empty graph
-
-        # if recs is None:
-        #     q.put(None)
-        #     break
-        graph_file = "graph"
-        for i,rec in enumerate(recs):
-
-            str_barc = str(rec.seq)
+    G = nx.Graph()                          # crete an empty graph
+    graph_file = "graph2"
+    for i,rec in enumerate(recs):
+        rec_part =  barcode_wins(rec, main_key_len)[0]
+        str_barc_part = str(rec_part.seq)
+        sec_dict = main_dict[str_barc_part]
+        str_barc = str(rec.seq)
+        if (sec_dict[str_barc] == rec.id):
             G.add_node((rec.seq, rec.id))
-            re = tre.compile(str_barc, tre.EXTENDED)
-            barc_parts_list = barcode_parts(rec, key_size) # brake the barcode to 4 parts
-            match = ()                  # create a tuple to connect a barcode to the sines id with edit-distance of at most 3
 
-            for rec_part in barc_parts_list:
-                match = is_match_barcodes_graph(main_dict[str(rec_part.seq)], rec.id, re, fuzziness, match)  # create the match
+        re = tre.compile(str_barc, tre.EXTENDED)
+        barc_parts_list = barcode_parts(rec, key_size) # brake the barcode to 4 parts
+        match = ()                  # create a tuple to connect a barcode to the sines id with edit-distance of at most 3
 
+        for rec_part in barc_parts_list:
+            match = is_match_barcodes_graph(main_dict[str(rec_part.seq)], rec.id, re, fuzziness, match)  # create the match
             # print(type(match))
             # print("this is match: ", match)
             for m in match:
-                G.add_edge((rec.seq, rec.id), (m[0], tuple(m[1])))  # create a edge between the barcode and its...
+                if (str(rec.seq) != str(m[0])):
+                    G.add_edge((rec.seq, rec.id), (m[0], tuple(m[1][0])))  # create a edge between the barcode and its...
 
             if i%100 == 0:
                 print((i / 1916278) *100, "%")
-                outfile = open(graph_file, 'wb')
-                pickle.dump(G, outfile)             # enter the graph to the file
 
-
-        outfile = open(graph_file, 'wb')
-        pickle.dump(G, outfile)
-        outfile.close()
-        # q.put((rec, match))
-        nx.draw(G)
-        plt.show()
-
-
-
+    outfile = open(graph_file, 'wb')
+    pickle.dump(G, outfile)
+    outfile.close()
+    nx.draw(G)
     log("Slave process exited")
 
 def new_SINES_filter_write(q, handle_write_inherited, handle_write_new, wait_none=False):
@@ -1609,6 +1610,16 @@ def run_part_1(in_file, B_file, out_dir):
                                          file_base + '_withSine' + file_ext,
                                          file_base + '_sineLocation' + file_ext)
 
+def get_sines_file(_withSineFile, _sineLocationFile):
+    with open_any(_withSineFile, "rt") as handle_read_sine, \
+            open_any(_sineLocationFile, "rt") as handle_read_location, \
+            open("sinesFile2.txt", "a") as sinesFile:
+        records = gene_records_parse(handle_read_sine)
+        for rec, location in zip(tqdm(records), handle_read_location):
+            sine_location = location.split(",")  # gets string and delimiter (',' in this case) returns list of strings
+            sine_location = [int(i) for i in sine_location]
+            new_rec = rec[sine_location[0]: sine_location[1]]
+            sinesFile.write(str(new_rec.seq) + "\n")
 
 def run_all(in_file, B_file, out_dir, mode=3):
     file_ext = None
@@ -1652,6 +1663,11 @@ def run_all(in_file, B_file, out_dir, mode=3):
         print_step("Start SINES_new_or_inherited histogram")
         SINES_histogram_of_neighbors(file_base + '_mainDict' + file_ext,
                                         file_base + '_sineBarcode' + file_ext)
+
+    if (mode == 5):
+        print_step("Start build sines file")
+        get_sines_file(file_base + '_withSine' + file_ext,
+                           file_base + '_sineLocation' + file_ext)
         return
     # part 2 - identify new sines
 
