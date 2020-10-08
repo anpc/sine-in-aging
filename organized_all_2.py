@@ -11,6 +11,7 @@ from multiprocessing import Process
 import sys
 from resource import getrusage, RUSAGE_SELF
 import numpy as np
+from random import shuffle
 
 
 from Bio import SeqIO
@@ -234,7 +235,6 @@ def build_dictionary_for_histogram(in_file_prefix, out_file_dict, sine_barcode_l
         handle_dict.flush()
 
     print_step("Start build_dictionary: done")
-
 # dict = build_dictionary('/media/sf_gene/10k_data/unif10k_sineBarcode.fastq.gz')
 
 
@@ -266,18 +266,12 @@ def is_match_barcodes_hist(sec_dict, barcode_id, re, fuzziness, match):
 
 def is_match_barcodes_graph(sec_dict, barcode_id, re, fuzziness, match):
     for barcode, id in sec_dict.items():
-        is_exist = False
         if re.search(str(barcode), fuzziness):
- #for barcodes in match:                         # run over the match tuple
-#  if is_exist == False:               # if we didn't found any appearance of id[1] in match
-#for barcode in idList[1]:                  # run over the id list that connect to the barcode
-# if the id [0] is in match
             if barcode not in [x[0] for x in match]:
-# is_exist = True
-#break
-# if is_exist == False:                   # when there is not val[0] in match
                 temp = (barcode, id)                    # create node to insert to match
                 match = match + (temp,)             # add the node to the match tuple
+#                print('match type',type(match))
+#               print('id type',type(id))
     return match
 
 #    for key, id in sec_dict.items():
@@ -358,31 +352,34 @@ def new_SINES_filter_proc_histogram(q, main_dict, key_size, fuzziness):
 
 # the same as the previous function,
 # only here the match is a list of all the barcodes id that close to the barcode
-def new_SINES_filter_proc_graph(recs, main_dict, key_size, fuzziness):
+def new_SINES_filter_proc_graph(recs, main_dict, key_size, fuzziness, i=0):
     G = nx.Graph()                          # crete an empty graph
-    graph_file = "graph2"
+    if (i ==0 ):
+        graph_file = 'graphPart'
+    else:
+        graph_file = 'graphPart'+ str(i)
+    main_key_len = int(36 / (3 + 1))
     for i,rec in enumerate(recs):
-        rec_part =  barcode_wins(rec, main_key_len)[0]
+        rec_part = list(barcode_wins(rec, main_key_len))[0]
         str_barc_part = str(rec_part.seq)
         sec_dict = main_dict[str_barc_part]
         str_barc = str(rec.seq)
+#        print ('sec_dict type', type(sec_dict[str_barc]))
+#        print(type(rec.id))
         if (sec_dict[str_barc] == rec.id):
             G.add_node((rec.seq, rec.id))
 
-        re = tre.compile(str_barc, tre.EXTENDED)
-        barc_parts_list = barcode_parts(rec, key_size) # brake the barcode to 4 parts
-        match = ()                  # create a tuple to connect a barcode to the sines id with edit-distance of at most 3
+            re = tre.compile(str_barc, tre.EXTENDED)
+            barc_parts_list = barcode_parts(rec, key_size) # brake the barcode to 4 parts
+            match = ()                  # create a tuple to connect a barcode to the sines id with edit-distance of at most 3
 
-        for rec_part in barc_parts_list:
-            match = is_match_barcodes_graph(main_dict[str(rec_part.seq)], rec.id, re, fuzziness, match)  # create the match
-            # print(type(match))
-            # print("this is match: ", match)
-            for m in match:
-                if (str(rec.seq) != str(m[0])):
-                    G.add_edge((rec.seq, rec.id), (m[0], tuple(m[1][0])))  # create a edge between the barcode and its...
-
-            if i%100 == 0:
-                print((i / 1916278) *100, "%")
+            for rec_part in barc_parts_list:
+                match = is_match_barcodes_graph(main_dict[str(rec_part.seq)], rec.id, re, fuzziness, match)  # create the match
+                # print(type(match))
+                # print("this is match: ", match)
+                for m in match:
+                    if (str(rec.seq) != str(m[0])):
+                        G.add_edge((rec.seq, rec.id), (m[0], m[1]))  # create a edge between the barcode and its...
 
     outfile = open(graph_file, 'wb')
     pickle.dump(G, outfile)
@@ -579,7 +576,7 @@ def new_SINES_filter_for_histogram(in_file_initial_filtering, main_dict, key_siz
 #                  '/media/sf_gene/10k_data/unif10k_inheritedSINE(2).fastq.gz', dict)
 
 # in_file_initial_filtering- the barcodes, main_dict- the dictionary, distribution_of_neighbors- list
-def new_SINES_filter_for_graph(in_file_initial_filtering, main_dict, key_size=9,
+def new_SINES_filter_for_graph(in_file_initial_filtering, main_dict,i=0, key_size=9,
                                    maxerr=3):
     fuzziness = tre.Fuzzyness(maxerr=maxerr)
 
@@ -587,7 +584,7 @@ def new_SINES_filter_for_graph(in_file_initial_filtering, main_dict, key_size=9,
 
         records = gene_records_parse(handle_read_initial_filtering)
 
-        new_SINES_filter_proc_graph(records, main_dict, key_size, fuzziness)
+        new_SINES_filter_proc_graph(records, main_dict, key_size, fuzziness,i)
 
 
 def SINES_new_or_inherited(in_file_dict,
@@ -601,13 +598,13 @@ def SINES_new_or_inherited(in_file_dict,
 
 
 # in_file_dict- the dictionary, in_file_initial_filtering - the barcodes, distribution_of_neighbors- list for counting the neighbors of barcods.
-def SINES_histogram_of_neighbors(in_file_dict, in_file_initial_filtering):
+def SINES_graph_of_neighbors(in_file_dict, in_file_initial_filtering,i=0):
     print_step("Start SINES_new_or_inherited: load dict")
     with open_any(in_file_dict, "rb") as handle_dict:
         dict = pickle.load(handle_dict)
 
     print_step("Start new_SINES_filter")
-    new_SINES_filter_for_graph(in_file_initial_filtering, dict)
+    new_SINES_filter_for_graph(in_file_initial_filtering, dict,i)
 
 
 # activate the last lines to create a graph
@@ -663,6 +660,14 @@ def get_sines_file(_withSineFile, _sineLocationFile):
             sine_location = [int(i) for i in sine_location]
             new_rec = rec[sine_location[0]: sine_location[1]]
             sinesFile.write(str(new_rec.seq) + "\n")
+        sinesFile.close()
+        with open("sinesFile2.txt", "r") as sinesFile:
+            sineArray = [line.strip() for line in sinesFile]
+            shuffle(sineArray)
+            random10Sines = sineArray[:10000]
+            with open("sinesFileRandom.txt", "a") as sinesFilerandom:
+                for item in random10Sines:
+                    sinesFilerandom.write("%s\n" % item)
 
 def run_all(in_file, B_file, out_dir, mode=3):
     file_ext = None
@@ -702,10 +707,13 @@ def run_all(in_file, B_file, out_dir, mode=3):
         print_step("Start build_dictionary")
         build_dictionary_for_histogram(file_base + '_sineBarcode' + file_ext,
                                            file_base + '_mainDict' + file_ext)
+        return
+
     if (mode == 4):
         print_step("Start SINES_new_or_inherited histogram")
-        SINES_histogram_of_neighbors(file_base + '_mainDict' + file_ext,
-                                        file_base + '_sineBarcode' + file_ext)
+        SINES_graph_of_neighbors(file_base + '_mainDict' + file_ext,
+                                        file_base + '_sineBarcode' + file_ext,i)
+        return
 
     if (mode == 5):
         print_step("Start build sines file")
