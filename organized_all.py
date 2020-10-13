@@ -12,17 +12,8 @@ from Bio import pairwise2
 from Bio.Seq import Seq
 #from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
-<<<<<<< HEAD
-from itertools import product, repeat
-from multiprocessing import Process
-import gene_lib
-import Bio
-import queue
-=======
 
 import gene_lib
->>>>>>> 43f3ca09184d4218470cf7f545d6841e1e2ec1ad
-
 
 try:
     from itertools import izip as zip
@@ -39,31 +30,26 @@ from gene_lib import *
 
 ############## part 1 ##############
 
-def filter_potential_sines_and_locations_proc(q, re, fuzziness):
-    while True:
-        recs = q.get()
-        # log(rec)
+def filter_potential_sines_and_locations_proc(recs, re, fuzziness, handle_write_sine, handle_write_loc):
+    
 
-        if recs is None:
-            break
+	for rec in recs:
+		match = re.search(str(rec.seq), fuzziness)
+		if match:
+			# print(rec.seq)
+			sine_location = match.groups() #returns tuple of tuples (in this case: ((2,78), ) for example
 
-        for rec in recs:
-            match = re.search(str(rec.seq), fuzziness)
-            if match:
-                # log(rec.seq)
-                sine_location = match.groups() #returns tuple of tuples (in this case: ((2,78), ) for example
+			
+			filter_potential_sines_and_locations_write(rec, sine_location, handle_write_sine, handle_write_loc)
 
-                q.put((rec, sine_location))
 
-def filter_potential_sines_and_locations_write(q, handle_write_sine, handle_write_loc):
-    while not q.empty():
-        (rec, sine_location) = q.get()
+def filter_potential_sines_and_locations_write(rec, sine_location, handle_write_sine, handle_write_loc):
 
-        gene_record_write(rec, handle_write_sine, 'fasta')
-        handle_write_loc.write(",".join([str(i) for i in sine_location[0]]) + "\n")
+	gene_record_write(rec, handle_write_sine, 'fasta')
+	handle_write_loc.write(",".join([str(i) for i in sine_location[0]]) + "\n")
 
-    handle_write_sine.flush()
-    handle_write_loc.flush()
+	handle_write_sine.flush()
+	handle_write_loc.flush()
 
 
 # this function gets fastq unify file (unify of R1 and R2 fastq files) in addition it gets a sine file
@@ -72,85 +58,20 @@ def filter_potential_sines_and_locations_write(q, handle_write_sine, handle_writ
 # and create a new fastq file with all the records contains the sine,
 # and another file contains the sines locations (tuple of (sine_start, sine_end) for each sine)
 def filter_potential_sines_and_locations(in_file_unify, in_file_sine, out_file_with_sine, out_file_location, sine_header=67, maxerr=14):
-    sine = gene_lib.get_sine_forward(in_file_sine)  #"B1.fasta"
-    re = tre.compile(sine[:sine_header], tre.EXTENDED)
-    fuzziness = tre.Fuzzyness(maxerr=maxerr)
-
-    # Create slave processes
-    procs = []
-    for _ in range(multiprocessing.cpu_count() - 3):
-        # Create a communication queue between this process and slave process
-        q = GeneDQueue()
-        
-        # Create and start slave process
-        p = Process(target=filter_potential_sines_and_locations_proc, args=(q, re, fuzziness))
-        p.start()
-
-        procs.append({
-            'p': p,
-            'q': q,
-            'batch': [],
-            'write_i': 0
-        })
-
-    with open_any(in_file_unify, "rt") as handle_read, \
-         open_any(out_file_with_sine, "wt") as handle_write_sine,\
-         open_any(out_file_location, "wt") as handle_write_loc:
+	sine = gene_lib.get_sine_forward(in_file_sine)  #"B1.fasta"
+	re = tre.compile(sine[:sine_header], tre.EXTENDED)
+	fuzziness = tre.Fuzzyness(maxerr=maxerr)
 
 
-        records = gene_records_parse(handle_read)
-        rec_i = 0
+	with open_any(in_file_unify, "rt") as handle_read, \
+		 open_any(out_file_with_sine, "wt") as handle_write_sine,\
+		 open_any(out_file_location, "wt") as handle_write_loc:
 
-        for rec in tqdm(records, miniters=100):
-            # Simple round-robin between the slave processes
-            proc = procs[rec_i % len(procs)]
 
-            # Add a new record into a local batch array of slave process
-            proc['batch'].append(rec)
-
-            if len(proc['batch']) >= 20:
-                # Get found potential sine from slave process queue
-                #
-                # Optimization: 
-                # Don't check the slave queue every iteration, as the check slows down.
-                # Moreover we won't get a potential sine for every record.
-                if proc['write_i'] > 3:
-                    filter_potential_sines_and_locations_write(proc['q'], handle_write_sine, handle_write_loc)
-                    proc['write_i'] = 0
-                else:
-                    proc['write_i'] += 1
-
-                # Put batch of new records into slave process queue
-                proc['q'].put(proc['batch'])
-
-                # Reset local batch of slave process
-                proc['batch'] = []
-
-            # Uncomment for testing a small amount of records
-            # if rec_i == 100000:
-            #     break
-
-            rec_i += 1
-        
-        # Cleanup slave processes
-        for proc in procs:
-            # Get found potential sine from slave process queue, before last batch
-            filter_potential_sines_and_locations_write(proc['q'], handle_write_sine, handle_write_loc)
-
-            # Put last batch, if avaliable
-            if len(proc['batch']):
-                proc['q'].put(proc['batch'])
-                proc['batch'] = []
-            
-            # Make slave proccess terminate
-            proc['q'].put(None)
-
-            # Wait for termination
-            proc['p'].join()
-            
-            # Get found potential sine from slave process queue, very last time
-            filter_potential_sines_and_locations_write(proc['q'], handle_write_sine, handle_write_loc)
-
+		records = gene_records_parse(handle_read)
+		rec_i = 0
+		filter_potential_sines_and_locations_proc(records, re, fuzziness, handle_write_sine, handle_write_loc)
+		
 
 # def filter_potential_sines_and_locations(in_file_unify, in_file_sine, out_file_with_sine, out_file_location, sine_header=67, maxerr=14):
 #     sine = gene_lib.get_sine_forward(in_file_sine) #"B1.fasta"
@@ -314,9 +235,9 @@ def build_dictionary_for_histogram(in_file_prefix, out_file_dict, sine_barcode_l
 
 	print_step("Start build_dictionary: product of 'ATCGN'")
 	for tuple in tqdm(product('ATCGN', repeat=main_key_len)): #product returns iterator
-		#log(tuple)
+		#print(tuple)
 		main_key = "".join([str(x) for x in tuple]) #without str() ??
-		#log(main_key)
+		#print(main_key)
 		main_dict[main_key] = {}
 
 	print_step("Start build_dictionary: fill with records")
@@ -371,8 +292,7 @@ def is_match_barcodes_hist(sec_dict, barcode_id, re, fuzziness, match, lenght):
 		if re.search(str(key), fuzziness):
 			if ((val[0] in match) == False):
 				match.extend(val)
-				
-				#log(len(val),len(match))
+			
 				
 
 
@@ -415,35 +335,9 @@ def new_SINES_filter_proc(q, main_dict, key_size, fuzziness):
 	
 # the same as the previous function,
 # only here the match is a list of all the barcodes id that close to the barcode
-<<<<<<< HEAD
 def new_SINES_filter_proc_histogram(recs, main_dict, noDuplicate, key_size, fuzziness, distribution_of_neighbors, lenght):
 	
 	with open_any(noDuplicate, "wt") as handle_noDuplicate:
-=======
-def new_SINES_filter_proc_histogram(q, main_dict, key_size, fuzziness):
-    while True:
-        recs = q.get()
-        # log(rec)
-
-        if recs is None:
-            q.put(None)
-            break
-
-        for rec in recs:
-            str_barc = str(rec.seq)
-            re = tre.compile(str_barc, tre.EXTENDED)
-            barc_parts_list = barcode_parts(rec, key_size)
-            match = []
-            
-            for rec_part in barc_parts_list:
-                is_match_barcodes_hist(main_dict[str(rec_part.seq)], rec.id, re, fuzziness, match)
-                    
-                    
-
-            q.put((rec, match))
-    
-    log("Slave process exited")	
->>>>>>> 43f3ca09184d4218470cf7f545d6841e1e2ec1ad
 
 		count = 0
 		for rec in recs:
@@ -465,9 +359,10 @@ def new_SINES_filter_proc_histogram(q, main_dict, key_size, fuzziness):
 			if(len(match)>= lenght):
 				distribution_of_neighbors[lenght-1] = distribution_of_neighbors[lenght-1] + 1
 			else:
-				distribution_of_neighbors[len(match)-1] = distribution_of_neighbors[len(match)-1] + 1
+				distribution_of_neighbors[len(match)] = distribution_of_neighbors[len(match)] + 1
 				
-		print("Slave process exited")	
+		print("Slave process exited")
+		
 		
 
 def new_SINES_filter_write(q, handle_write_inherited, handle_write_new, wait_none=False):
@@ -599,9 +494,6 @@ def new_SINES_filter_for_histogram(in_file_initial_filtering, main_dict, noDupli
 		#q = queue.Queue()
 		new_SINES_filter_proc_histogram(records, main_dict, noDuplicate, key_size, fuzziness, distribution_of_neighbors, lenght)
 		
-		
-		#update_distribution(q, distribution_of_neighbors)# למה?
-
 
 
 # new_SINES_filter('/media/sf_gene/10k_data/unif10k_potentialNewSINE.fastq.gz',
@@ -631,51 +523,34 @@ def SINES_histogram_of_neighbors(in_file_dict, in_file_initial_filtering,noDupli
 	print_step("Start new_SINES_filter")
 	new_SINES_filter_for_histogram(in_file_initial_filtering, dict, noDuplicate, distribution_of_neighbors,lenght)
 
-#activate the last lines to create a graph
-<<<<<<< HEAD
-def print_histogram(distribution_of_neighbors, name, lenght, mode = 5):
+def save_histogram(distribution_of_neighbors, name):
 	
-	if mode == 5:
-		str1 = name + "_distribution_of_neighbors"+str(lenght)+".txt"
-		dist = open(str1, "wt")
-		dist.write(','.join([str(elem) for elem in distribution_of_neighbors]))
+	str1 = name + "_distribution_of_neighbors.txt"
+	dist = open(str1, "wt")
+	dist.write(','.join([str(elem) for elem in distribution_of_neighbors]))
+
+	dist.close()
+
+
 	
-		dist.close()
-	percetage = [0.0]*lenght
-	normal1 =  [0.0]*lenght
-	normal2 = [0.0]*(lenght-1)
-	for i in range(len(distribution_of_neighbors)):
-			
-		normal1[i] = distribution_of_neighbors[i]/(i+1)
-		if i < (lenght-1):
-			normal2[i] = distribution_of_neighbors[i]/(i+1)
-					
-	s = sum(distribution_of_neighbors)
-	s1 = sum(normal1)
-	s2 = sum(normal2)
+def filtering(original_hist, realNew, name):
+	file_handle = open(original_hist, "rt")
+	histogram = []
 		
-	for i in range(lenght):
-		percetage[i] = (distribution_of_neighbors[i]/s) * 100
-		normal1[i] = (normal1[i]/s1) * 100
-		if(i<(lenght -1)):
-			normal2[i] = (normal2[i]/s2) * 100
-	print("distribution_of_neighbors:", distribution_of_neighbors)
-	print("percetage:", percetage)
-	print("normal all: ", normal1)
-	print("normal -1: ", normal2)
-=======
-def print_histogram(distribution_of_neighbors):
-	log(distribution_of_neighbors)
-	#indices = np.arange(len(distribution_of_neighbors))
-	#plt.bar(indices, distribution_of_neighbors)
->>>>>>> 43f3ca09184d4218470cf7f545d6841e1e2ec1ad
+	for line in file_handle:
+		line = line.rstrip('\n')
 	
-	
+		histogram = list(line.split(","))
+		histogram = [int(i) for i in histogram]
+		break
+	histogram[1] = realNew
+	str1 = name + "_filtered_distribution_of_neighbors.txt"
+	newHistogram = open(str1, "wt")
+	newHistogram.write(','.join([str(elem) for elem in histogram]))
 
+	newHistogram.close()
 	
 	
-
-
 #SINES_new_or_inherited('/media/sf_gene/10k_data/unif10k_sineBarcode.fastq.gz',
 #                       '/media/sf_gene/10k_data/unif10k_potentialNewSINE.fastq.gz',
 #                       '/media/sf_gene/10k_data/unif10k_NewSINE.fastq.gz',
@@ -703,8 +578,12 @@ def run_part_1(in_file, B_file, out_dir):
 										 file_base + '_withSine' + file_ext,
 										 file_base + '_sineLocation' + file_ext)
 
+#mode 1 - finds the SINEs, mode 2 - creates the barcods file,
+#mode 3 - creates the dictionary and find the new and inhereted SINEs,
+#mode 4 - creates the dictionary for histogram, mode 5 - creates the histogram and new SINEs file,
+#mode 6 - filter the histogram with the second mouse data
 #lenght- size of histogram
-def run_all(in_file, B_file, out_dir, mode = 3, lenght = 50):
+def run_all(in_file, B_file, out_dir, mode = 3, length = 50):
 	
 		
 	file_ext = None
@@ -739,58 +618,78 @@ def run_all(in_file, B_file, out_dir, mode = 3, lenght = 50):
 										   file_base + '_sineBarcode' + file_ext)
 		return 
 		
+	
+	if mode == 3:
+		print_step("Start build_dictionary")
+		build_dictionary(file_base + '_sineBarcode' + file_ext,
+								file_base + '_mainDict' + file_ext)
 
-	#create the dictionary
+
+		
+		print_step("Start new_SINES_Initial_filter_rec")
+		new_SINES_Initial_filter_rec(file_base + '_sineBarcode' + file_ext,
+									 file_base + '_potentialNewSINE' + file_ext,
+									 file_base + '_inheritedSINE' + file_ext)
+
+
+		print_step("Start SINES_new_or_inherited")
+		SINES_new_or_inherited(file_base + '_mainDict' + file_ext,
+							   file_base + '_potentialNewSINE' + file_ext,
+							   file_base + '_NewSINE' + file_ext,
+							   file_base + '_inheritedSINE_2' + file_ext)
+
+		print_step("DONE ALL!")
+	
+	#create the dictionary for histogram  
 	if(mode == 4):
 		print_step("Start build_dictionary")
 		build_dictionary_for_histogram(file_base + '_sineBarcode' + file_ext,
-								file_base + '_mainDict' + file_ext)
+								file_base + '_mainDictHistogram' + file_ext)
 
 		return
 	# part 2 - identify new sines
 	
 	if mode == 5:#after we have the dictionary
-		distribution_of_neighbors = [0]*lenght
+		distribution_of_neighbors = [0]*length
 		print_step("Start SINES_new_or_inherited histogram")
-		SINES_histogram_of_neighbors(file_base + '_mainDict' + file_ext,
+		SINES_histogram_of_neighbors(file_base + '_mainDictHistogram' + file_ext,
 									 file_base + '_sineBarcode' + file_ext,
 									 file_base + '_NewSINE' + file_ext,
-									 distribution_of_neighbors, lenght)
-		print_histogram(distribution_of_neighbors, file_base, lenght)
+									 distribution_of_neighbors, length)
+		save_histogram(distribution_of_neighbors, file_base)
 		return
 	
 
-	#to print the distribution_of_neighbors data
+	#crossing - the files names need to be the same and start with 'wt' or 'old'
 	if mode == 6:
+		distribution_of_neighbors = [0]*length
+		if file_base[1 +len(out_dir):3+len(out_dir)] == 'wt':
+			name = out_dir + '/' +"wtCrossingOldDict"+ file_base[3+len(out_dir):]
+			oldDict = out_dir + '/old'+file_base[3+len(out_dir):] + '_mainDictHistogram' + file_ext
+			wtNew = file_base + '_NewSINE' + file_ext
+
+			print_step("Start wtCrossingOldDict histogram")
+			
+			SINES_histogram_of_neighbors(oldDict,
+										 wtNew,
+										 name + '_NewSINE' + file_ext,
+										 distribution_of_neighbors, length)
+			save_histogram(distribution_of_neighbors, name)
+			filtering(file_base+"_distribution_of_neighbors.txt", distribution_of_neighbors[0], file_base)
+			
+		else:
+			name = out_dir + '/' +"oldCrossingWtDict"+ file_base[4+len(out_dir):]
+			wtDict = out_dir + '/wt'+file_base[4+len(out_dir):] + '_mainDictHistogram' + file_ext
+			oldNew = file_base+ '_NewSINE' + file_ext
+
+			print_step("Start wtCrossingOldDict histogram")
+			
+			SINES_histogram_of_neighbors(wtDict,
+										 oldNew,
+										 name + '_NewSINE' + file_ext,
+										 distribution_of_neighbors, length)
+			save_histogram(distribution_of_neighbors, name)
+			filtering(file_base+"_distribution_of_neighbors.txt", distribution_of_neighbors[0], file_base)
+
 		
-		file_handle = open(file_base + '_distribution_of_neighbors'+str(lenght)+'.txt', "rt")
-		numbers = [0]*lenght
-		for line in file_handle:
-			line = line.rstrip('\n')
-		
-			numbers = list(line.split(","))
-			numbers = [int(i) for i in numbers]
-			break
-		print_histogram(numbers, file_base, lenght, mode)
 		return
-		
-	
-	print_step("Start build_dictionary")
-	build_dictionary(file_base + '_sineBarcode' + file_ext,
-							file_base + '_mainDict' + file_ext)
-
-
-
-	print_step("Start new_SINES_Initial_filter_rec")
-	new_SINES_Initial_filter_rec(file_base + '_sineBarcode' + file_ext,
-								 file_base + '_potentialNewSINE' + file_ext,
-								 file_base + '_inheritedSINE' + file_ext)
-
-
-	print_step("Start SINES_new_or_inherited")
-	SINES_new_or_inherited(file_base + '_mainDict' + file_ext,
-						   file_base + '_potentialNewSINE' + file_ext,
-						   file_base + '_NewSINE' + file_ext,
-						   file_base + '_inheritedSINE_2' + file_ext)
-
-	print_step("DONE ALL!")
