@@ -285,9 +285,9 @@ def is_match_barcodes(sec_dict, barcode_id, re, fuzziness):
 # this function gets the barcode, its id, a dictionary contains all the records we want to check match with,
 # and a maximum error argument for the check
 # it update the match list
-def is_match_barcodes_hist(sec_dict, barcode_id, re, fuzziness, match, lenght):
+def is_match_barcodes_hist(sec_dict, barcode_id, re, fuzziness, match, length):
 	for key, val in sec_dict.items():
-		if len(match) == lenght:
+		if len(match) == length:
 			return
 		if re.search(str(key), fuzziness):
 			if ((val[0] in match) == False):
@@ -335,7 +335,7 @@ def new_SINES_filter_proc(q, main_dict, key_size, fuzziness):
 	
 # the same as the previous function,
 # only here the match is a list of all the barcodes id that close to the barcode
-def new_SINES_filter_proc_histogram(recs, main_dict, noDuplicate, key_size, fuzziness, distribution_of_neighbors, lenght):
+def new_SINES_filter_proc_histogram(recs, main_dict, noDuplicate, key_size, fuzziness, distribution_of_neighbors, length):
 	
 	with open_any(noDuplicate, "wt") as handle_noDuplicate:
 
@@ -347,7 +347,7 @@ def new_SINES_filter_proc_histogram(recs, main_dict, noDuplicate, key_size, fuzz
 			match = []
 			
 			for rec_part in barc_parts_list:
-				is_match_barcodes_hist(main_dict[str(rec_part.seq)], rec.id, re, fuzziness, match, lenght)
+				is_match_barcodes_hist(main_dict[str(rec_part.seq)], rec.id, re, fuzziness, match, length)
 					
 			count = count + 1		
 			if count % 100000 == 0 :
@@ -356,8 +356,8 @@ def new_SINES_filter_proc_histogram(recs, main_dict, noDuplicate, key_size, fuzz
 			if len(match) == 1:
 				gene_record_write(rec, handle_noDuplicate)
 				
-			if(len(match)>= lenght):
-				distribution_of_neighbors[lenght-1] = distribution_of_neighbors[lenght-1] + 1
+			if(len(match)>= length):
+				distribution_of_neighbors[length-1] = distribution_of_neighbors[length-1] + 1
 			else:
 				distribution_of_neighbors[len(match)] = distribution_of_neighbors[len(match)] + 1
 				
@@ -481,7 +481,7 @@ def new_SINES_filter(in_file_initial_filtering, out_file_new_SINES, out_file_inh
             
 
 #in_file_initial_filtering- the barcodes, main_dict- the dictionary, distribution_of_neighbors- list
-def new_SINES_filter_for_histogram(in_file_initial_filtering, main_dict, noDuplicate, distribution_of_neighbors, lenght, key_size=9, maxerr=3):
+def new_SINES_filter_for_histogram(in_file_initial_filtering, main_dict, noDuplicate, distribution_of_neighbors, length, key_size=9, maxerr=3):
 
 	fuzziness = tre.Fuzzyness(maxerr=maxerr)
 
@@ -492,7 +492,7 @@ def new_SINES_filter_for_histogram(in_file_initial_filtering, main_dict, noDupli
 
 		records = gene_records_parse(handle_read_initial_filtering)
 		#q = queue.Queue()
-		new_SINES_filter_proc_histogram(records, main_dict, noDuplicate, key_size, fuzziness, distribution_of_neighbors, lenght)
+		new_SINES_filter_proc_histogram(records, main_dict, noDuplicate, key_size, fuzziness, distribution_of_neighbors, length)
 		
 
 
@@ -515,13 +515,13 @@ def SINES_new_or_inherited(in_file_dict,
 
 
 # in_file_dict- the dictionary, in_file_initial_filtering - the barcodes, distribution_of_neighbors- list for counting the neighbors of barcods.
-def SINES_histogram_of_neighbors(in_file_dict, in_file_initial_filtering,noDuplicate, distribution_of_neighbors, lenght):
+def SINES_histogram_of_neighbors(in_file_dict, in_file_initial_filtering,noDuplicate, distribution_of_neighbors, length):
 	print_step("Start SINES_new_or_inherited for histogram: load dict")
 	with open_any(in_file_dict, "rb") as handle_dict:
 		dict = pickle.load(handle_dict)
 
 	print_step("Start new_SINES_filter")
-	new_SINES_filter_for_histogram(in_file_initial_filtering, dict, noDuplicate, distribution_of_neighbors,lenght)
+	new_SINES_filter_for_histogram(in_file_initial_filtering, dict, noDuplicate, distribution_of_neighbors,length)
 
 def save_histogram(distribution_of_neighbors, name):
 	
@@ -582,7 +582,7 @@ def run_part_1(in_file, B_file, out_dir):
 #mode 3 - creates the dictionary and find the new and inhereted SINEs,
 #mode 4 - creates the dictionary for histogram, mode 5 - creates the histogram and new SINEs file,
 #mode 6 - filter the histogram with the second mouse data
-#lenght- size of histogram
+#length- size of histogram
 def run_all(in_file, B_file, out_dir, mode = 3, length = 50):
 	
 		

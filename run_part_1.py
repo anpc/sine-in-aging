@@ -6,8 +6,8 @@ import sys
 
 # TODO decide what command line params we need
 if len(sys.argv[1:]) == 5:
-	[merged_input_fname, sine_name, output_dir, mode, lenght] = sys.argv[1:]
-	run_all(merged_input_fname, sine_name, output_dir, int(mode), int(lenght))
+	[merged_input_fname, sine_name, output_dir, mode, length] = sys.argv[1:]
+	run_all(merged_input_fname, sine_name, output_dir, int(mode), int(length))
 else:
 	[merged_input_fname, sine_name, output_dir, mode] = sys.argv[1:]
 	run_all(merged_input_fname, sine_name, output_dir, int(mode))
