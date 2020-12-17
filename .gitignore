@@ -10,8 +10,13 @@ wt-lung*
 old_lung*
 Old-*/
 Young-*/
+p53-*/
+# DISK is a symlink I use to point to a USB drive
+DISK
 
 Ariel.pem
 __pycache__/
 
 merge-test-merged.fastq
+*.fastq.gz
+*.fastq.zstd
