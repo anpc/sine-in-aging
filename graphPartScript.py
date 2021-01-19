@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.6
+#!/usr/bin/env python3.8
 
 from organized_all_2 import SINES_graph_of_neighbors
 import sys

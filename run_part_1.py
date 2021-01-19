@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.6
+#!/usr/bin/env python3.8
 
 from organized_all import run_all
 from organized_all import run_part_1

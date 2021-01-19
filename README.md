@@ -84,7 +84,7 @@ The neat thing is split_recompress.py isn't even aware anything special happened
 
 ## Tests
 ```bash
-python3.6 -m doctest --option=ELLIPSIS split_recompress.py
+python3.8 -m doctest --option=ELLIPSIS split_recompress.py
 ```
 
 # r1r2merge.py
