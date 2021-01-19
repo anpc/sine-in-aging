@@ -68,7 +68,7 @@ See blog post [Pipes, process substitution and why should a biologist ever care
 ](http://manutamminen.info/posts/process_subst/).
 
 ```bash
-./split_recompress.py <(aws s3 cp s3://endogene/mice_wgs/Aging/Young-liver/wt-liver_R1_001.fastq.gz -) Young-liver/wt-liver_R1_001
+./split_recompress.py <(aws s3 cp s3://endogene/mice_wgs/Aging/p53-liver/p53-liver_R2_001.fastq.gz -) p53-liver/p53-liver_R2_001
 ```
 What this `<(...)` syntax does is open a pipe from `aws s3 cp ... -` to `split_recompress.py` process,
 but not to stdin. It gets assigned some new file descriptor, say 63.
@@ -93,7 +93,7 @@ it now always writes to stdout, *without compression*.
 To merge the whole input:
 
 ```bash
-./r1r2merge.py Young-liver/wt-liver_R1_001.fastq.gz Young-liver/wt-liver_R2_001.fastq.gz | gzip --stdout -2 > Young-liver/wt-liver_merged.fastq.gz
+./r1r2merge.py p53-liver/p53-liver_R1_001.fastq.gz p53-liver/p53-liver_R2_001.fastq.gz | gzip --stdout -2 > p53-liver/p53-liver_merged.fastq.gz
 ```
 
 But we can run it faster by parallelizing over chunks produced above:
@@ -101,7 +101,10 @@ You should replace 2nd argument of `seq` with number of chunks you have.
 `--jobs=-2` means number of CPU cores you have minus 2.
 
 ```bash
-seq 0 35 | parallel --jobs=-2 --eta --joblog=Young-liver/merge.joblog './r1r2merge.py Young-liver/wt-liver_R1_001.part{}e8.fastq.gz Young-liver/wt-liver_R2_001.part{}e8.fastq.gz | gzip --stdout -2 > Young-liver/wt-liver_merged.part{}e8.fastq.gz'
+seq 0 32 | parallel --jobs=-2 --bar --eta --joblog=p53-liver/merge.joblog '
+  ./r1r2merge.py p53-liver/p53-liver_R1_001.part{}e8.fastq.gz p53-liver/p53-liver_R2_001.part{}e8.fastq.gz | gzip --stdout -2 > p53-liver/p53-liver_merged.part{}e8.fastq.gz &&
+  rm --verbose p53-liver/p53-liver_R1_001.part{}e8.fastq.gz p53-liver/p53-liver_R2_001.part{}e8.fastq.gz
+'
 ```
 
 ## Tests
@@ -122,14 +125,14 @@ But it's better not to filter with exact params we want, but first take a **crud
 Motivation: simply reading & decompressing the full ~60GB takes hours.  By allowing say edit distance up to 19, we're already reducing the input size by 2 orders of magnitude, and reading that takes less than a minute!  That means once we do this filtering, we can upload it to AWS S3 and later experiment with more precise thresholds.
 
 ```bash
-seq 0 35 | parallel --jobs=-2 --eta --joblog=Young-liver/filter.joblog './filter_candidates.py B1.fasta 67 19 forward Young-liver/wt-liver_merged.part{}e8.fastq.gz | gzip --stdout -2 > Young-liver/wt-liver_merged-candidates-B1forward-head67err19.part{}e8.fastq.gz'
-seq 0 35 | parallel --jobs=-2 --eta --joblog=Young-liver/filter.joblog './filter_candidates.py B1.fasta 67 19 rc Young-liver/wt-liver_merged.part{}e8.fastq.gz | gzip --stdout -2 > Young-liver/wt-liver_merged-candidates-B1rc-head67err19.part{}e8.fastq.gz'
+seq 0 32 | parallel --jobs=-2 --eta --joblog=p53-liver/filter-B1forward.joblog './filter_candidates.py B1.fasta 67 19 forward p53-liver/p53-liver_merged.part{}e8.fastq.gz | gzip --stdout -2 > p53-liver/p53-liver_merged-candidates-B1forward-head67err19.part{}e8.fastq.gz'
+seq 0 32 | parallel --jobs=-2 --eta --joblog=p53-liver/filter-B1rc.joblog './filter_candidates.py B1.fasta 67 19 rc p53-liver/p53-liver_merged.part{}e8.fastq.gz | gzip --stdout -2 > p53-liver/p53-liver_merged-candidates-B1rc-head67err19.part{}e8.fastq.gz'
 
-seq 0 35 | parallel --jobs=-2 --eta --joblog=Young-liver/filter.joblog './filter_candidates.py B2.fasta 67 19 forward Young-liver/wt-liver_merged.part{}e8.fastq.gz | gzip --stdout -2 > Young-liver/wt-liver_merged-candidates-B2forward-head67err19.part{}e8.fastq.gz'
-seq 0 35 | parallel --jobs=-2 --eta --joblog=Young-liver/filter.joblog './filter_candidates.py B2.fasta 67 19 rc Young-liver/wt-liver_merged.part{}e8.fastq.gz | gzip --stdout -2 > Young-liver/wt-liver_merged-candidates-B2rc-head67err19.part{}e8.fastq.gz'
+seq 0 32 | parallel --jobs=-2 --eta --joblog=p53-liver/filter-B2forward.joblog './filter_candidates.py B2.fasta 67 19 forward p53-liver/p53-liver_merged.part{}e8.fastq.gz | gzip --stdout -2 > p53-liver/p53-liver_merged-candidates-B2forward-head67err19.part{}e8.fastq.gz'
+seq 0 32 | parallel --jobs=-2 --eta --joblog=p53-liver/filter-B2rc.joblog './filter_candidates.py B2.fasta 67 19 rc p53-liver/p53-liver_merged.part{}e8.fastq.gz | gzip --stdout -2 > p53-liver/p53-liver_merged-candidates-B2rc-head67err19.part{}e8.fastq.gz'
 
-seq 0 35 | parallel --jobs=-2 --eta --joblog=Young-liver/filter.joblog './filter_candidates.py B4.fasta 67 19 forward Young-liver/wt-liver_merged.part{}e8.fastq.gz | gzip --stdout -2 > Young-liver/wt-liver_merged-candidates-B4forward-head67err19.part{}e8.fastq.gz'
-seq 0 35 | parallel --jobs=-2 --eta --joblog=Young-liver/filter.joblog './filter_candidates.py B4.fasta 67 19 rc Young-liver/wt-liver_merged.part{}e8.fastq.gz | gzip --stdout -2 > Young-liver/wt-liver_merged-candidates-B4rc-head67err19.part{}e8.fastq.gz'
+seq 0 32 | parallel --jobs=-2 --eta --joblog=p53-liver/filter-B4forward.joblog './filter_candidates.py B4.fasta 67 19 forward p53-liver/p53-liver_merged.part{}e8.fastq.gz | gzip --stdout -2 > p53-liver/p53-liver_merged-candidates-B4forward-head67err19.part{}e8.fastq.gz'
+seq 0 32 | parallel --jobs=-2 --eta --joblog=p53-liver/filter-B4rc.joblog './filter_candidates.py B4.fasta 67 19 rc p53-liver/p53-liver_merged.part{}e8.fastq.gz | gzip --stdout -2 > p53-liver/p53-liver_merged-candidates-B4rc-head67err19.part{}e8.fastq.gz'
 ```
 
 # TODO document rest of process 
