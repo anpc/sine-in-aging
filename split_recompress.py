@@ -67,13 +67,13 @@ def chunks(iterable, chunk_size):
         yield itertools.chain([first_item_of_chunk],
                               itertools.islice(shared_input_iterator, chunk_size - 1))
 
-def split_recompress(in_fname, out_basename, skip=[]):
+def split_recompress(in_fname, out_basename, power_of_ten, skip=[]):
     """
     skip - indexes of parts to skip (still need to decompress but not compress)
     """
     with gzip.open(in_fname, 'rb') as in_fastq:
-        for i, chunk_iter in enumerate(chunks(in_fastq, chunk_size=100_000_000)):
-            out_fname = f'{out_basename}.part{i}e8.fastq.gz'
+        for i, chunk_iter in enumerate(chunks(in_fastq, chunk_size=10**power_of_ten)):
+            out_fname = f'{out_basename}.part{i}e{power_of_ten}.fastq.gz'
             t0 = time.time()
             if i in skip:
                 log('Skipping', out_fname)
@@ -90,8 +90,7 @@ def split_recompress(in_fname, out_basename, skip=[]):
 #split_recompress('Old-lung/old_lung_R1_001.fastq.gz', 'Old-lung/old_lung_R1_001')
 
 if __name__ == '__main__':
-    [in_fname, out_basename, *skip] = sys.argv[1:]
-    skip = [int(i) for i in skip]
-    split_recompress(in_fname, out_basename, skip)
+    [in_fname, out_basename, power_of_ten] = sys.argv[1:]
+    split_recompress(in_fname, out_basename, int(power_of_ten))
     log('REMOVING', in_fname)
     os.remove(in_fname)  # may fail for /dev/stdin, /dev/fd/... etc. but that's OK

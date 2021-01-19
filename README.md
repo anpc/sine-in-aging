@@ -45,11 +45,11 @@ aws s3 cp s3://endogene/mice_wgs/Aging/Old-liver/old_liver_R1_001.fastq.gz - | g
 
 for example in p53-liver
 ```bash
-./split_recompress.py p53-liver_R1_001.fastq.gz p53-liver_R1_001
-./split_recompress.py p52-liver_R2_001.fastq.gz p53-liver_R2_001
+./split_recompress.py p53-liver_R1_001.fastq.gz p53-liver_R1_001 8
+./split_recompress.py p52-liver_R2_001.fastq.gz p53-liver_R2_001 8
 ...
 ```
-This cuts input into chunks of 100 000 000 (1e8) lines - which are exactly 25_000_000 records - writing files named:
+The `8` parameter makes it cut input into chunks of 100 000 000 (1e8) lines - which are exactly 25 000 000 records - writing files named:
 ```
 p53-liver_R1_001.part0e8.fastq.gz
 p53-liver_R1_001.part1e8.fastq.gz
@@ -68,7 +68,7 @@ See blog post [Pipes, process substitution and why should a biologist ever care
 ](http://manutamminen.info/posts/process_subst/).
 
 ```bash
-./split_recompress.py <(aws s3 cp s3://endogene/mice_wgs/Aging/p53-liver/p53-liver_R2_001.fastq.gz -) p53-liver/p53-liver_R2_001
+./split_recompress.py <(aws s3 cp s3://endogene/mice_wgs/Aging/p53-liver/p53-liver_R2_001.fastq.gz -) p53-liver/p53-liver_R2_001 8
 ```
 What this `<(...)` syntax does is open a pipe from `aws s3 cp ... -` to `split_recompress.py` process,
 but not to stdin. It gets assigned some new file descriptor, say 63.
