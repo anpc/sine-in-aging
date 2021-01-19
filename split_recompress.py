@@ -92,5 +92,3 @@ def split_recompress(in_fname, out_basename, power_of_ten, skip=[]):
 if __name__ == '__main__':
     [in_fname, out_basename, power_of_ten] = sys.argv[1:]
     split_recompress(in_fname, out_basename, int(power_of_ten))
-    log('REMOVING', in_fname)
-    os.remove(in_fname)  # may fail for /dev/stdin, /dev/fd/... etc. but that's OK

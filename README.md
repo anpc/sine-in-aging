@@ -45,10 +45,12 @@ aws s3 cp s3://endogene/mice_wgs/Aging/Old-liver/old_liver_R1_001.fastq.gz - | g
 
 for example in p53-liver
 ```bash
-./split_recompress.py p53-liver_R1_001.fastq.gz p53-liver_R1_001 8
-./split_recompress.py p52-liver_R2_001.fastq.gz p53-liver_R2_001 8
+./split_recompress.py p53-liver_R1_001.fastq.gz p53-liver_R1_001 8 && rm --verbose p53-liver_R1_001.fastq.gz
+./split_recompress.py p52-liver_R2_001.fastq.gz p53-liver_R2_001 8 && rm --verbose p52-liver_R2_001.fastq.gz
 ...
 ```
+(The `rm` is of course optional.)
+
 The `8` parameter makes it cut input into chunks of 100 000 000 (1e8) lines - which are exactly 25 000 000 records - writing files named:
 ```
 p53-liver_R1_001.part0e8.fastq.gz
