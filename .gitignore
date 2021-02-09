@@ -17,6 +17,7 @@ DISK
 Ariel.pem
 __pycache__/
 
-merge-test-merged.fastq
+test-files/merge-merged.fastq
+
 *.fastq.gz
 *.fastq.zstd

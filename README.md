@@ -112,8 +112,8 @@ seq 0 32 | parallel --jobs=-2 --bar --eta --joblog=p53-liver/merge.joblog '
 ## Tests
 
 ```bash
-./r1r2merge.py merge-test-R1.fastq merge-test-R2.fastq > merge-test-merged.fastq
-diff --report-identical-files merge-test-merged.fastq merge-test-expected.fastq
+./r1r2merge.py test-files/merge-R1.fastq test-files/merge-R2.fastq > test-files/merge-merged.fastq
+diff --report-identical-files test-files/merge-merged.fastq test-files/merge-expected.fastq
 ```
 
 # Filter (crude) candidates
