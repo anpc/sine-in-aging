@@ -108,6 +108,7 @@ def filter_potential_sines_barcode(sine_barcode_len, in_file_sine, in_file_locat
         for rec, location in zip(tqdm(records), handle_read_location):
             sine_location = location.split(",") #gets string and delimiter (',' in this case) returns list of strings
             sine_location = [int(i) for i in sine_location]
+	    # TODO: check whether we are not off-by-one
             if(sine_location[0] >= sine_barcode_len):
                 new_rec = rec[sine_location[0] - sine_barcode_len: sine_location[0]]
                 gene_record_write(new_rec, handle_write_barcode)
@@ -182,7 +183,7 @@ def barcode_wins(record, part_len):
 
 
 #==== dictionary build====#
-# This function build a main_dictionary that will be used in the second filtering step.
+# This function builds a main_dictionary that will be used in the second filtering step.
 # The main_dictionary keys length is "main_key_len" = barcode_len / d+1
 # (where d is the "maximum error" - above it, two barcodes will be considered as different).
 # this key represents one possible part of a barcode (out of all the possible options to get DNA subsequence of main_key_len)
@@ -195,6 +196,7 @@ def build_dictionary(in_file_prefix, out_file_dict, sine_barcode_len = 36, maxer
     main_dict = {}
 
     print_step("Start build_dictionary: product of 'ATCGN'")
+    print_step("main_key_len = ", main_key_len)
     for tuple in tqdm(product('ATCGN', repeat=main_key_len)): #product returns iterator
         #log(tuple)
         main_key = "".join([str(x) for x in tuple]) #without str() ??
@@ -229,18 +231,19 @@ def build_dictionary(in_file_prefix, out_file_dict, sine_barcode_len = 36, maxer
 #the same dictionary, only this one save in the "sec_dict" a list of all the id with the same barcode.
 #in_file_prefix- the barcodes, out_file_dict- the dictionary-empty at first.
 def build_dictionary_for_histogram(in_file_prefix, out_file_dict, sine_barcode_len = 36, maxerr = 3):#main_key_len=9):
+	print_step("build_dictionary_for_histogram")
 	assert sine_barcode_len % (maxerr + 1) == 0
 	main_key_len = int(sine_barcode_len / (maxerr + 1))
 	main_dict = {}
 
-	print_step("Start build_dictionary: product of 'ATCGN'")
+	print_step("build_dictionary_for_histogram: product of 'ATCGN'")
 	for tuple in tqdm(product('ATCGN', repeat=main_key_len)): #product returns iterator
 		#print(tuple)
 		main_key = "".join([str(x) for x in tuple]) #without str() ??
 		#print(main_key)
 		main_dict[main_key] = {}
 
-	print_step("Start build_dictionary: fill with records")
+	print_step("build_dictionary_for_histogram: fill with records")
 	with open_any(in_file_prefix, "rt") as handle_read_prefix:
 		records = gene_records_parse(handle_read_prefix)
 		for rec in tqdm(records):
@@ -256,12 +259,12 @@ def build_dictionary_for_histogram(in_file_prefix, out_file_dict, sine_barcode_l
 					sec_dict[str_barc].append(rec.id)
 					
 
-	print_step("Start build_dictionary: write to file")
+	print_step("build_dictionary_for_histogram: write to file")
 	with open_any(out_file_dict, "wb") as handle_dict:
 		pickle.dump(main_dict, handle_dict, protocol=pickle.HIGHEST_PROTOCOL)
 		handle_dict.flush()
 		
-	print_step("Start build_dictionary: done")
+	print_step("build_dictionary_for_histogram: done")
 
 	#dict = build_dictionary('/media/sf_gene/10k_data/unif10k_sineBarcode.fastq.gz')
 
@@ -290,6 +293,8 @@ def is_match_barcodes_hist(sec_dict, barcode_id, re, fuzziness, match, length):
 		if len(match) == length:
 			return
 		if re.search(str(key), fuzziness):
+			# It suffices, because we just want tonot count the same barcode in different buckets. The barcode is
+			# inserted with the same list of id's into every window
 			if ((val[0] in match) == False):
 				match.extend(val)
 			
@@ -360,8 +365,6 @@ def new_SINES_filter_proc_histogram(recs, main_dict, noDuplicate, key_size, fuzz
 				distribution_of_neighbors[length-1] = distribution_of_neighbors[length-1] + 1
 			else:
 				distribution_of_neighbors[len(match)] = distribution_of_neighbors[len(match)] + 1
-				
-		print("Slave process exited")
 		
 		
 
@@ -578,9 +581,11 @@ def run_part_1(in_file, B_file, out_dir):
 										 file_base + '_withSine' + file_ext,
 										 file_base + '_sineLocation' + file_ext)
 
-#mode 1 - finds the SINEs, mode 2 - creates the barcods file,
+#mode 1 - finds the SINEs, mode 2 - creates the barcodes file,
+#mode 2 - takes reads with SINEs file, and generates correseponding files of sineLocation (rel. sine location in read) and sineBarcode
 #mode 3 - creates the dictionary and find the new and inhereted SINEs,
-#mode 4 - creates the dictionary for histogram, mode 5 - creates the histogram and new SINEs file,
+#mode 4 - creates the dictionary for histogram (we do either 3 or 4), 
+#mode 5 - creates the histogram and new SINEs file,
 #mode 6 - filter the histogram with the second mouse data
 #length- size of histogram
 def run_all(in_file, B_file, out_dir, mode = 3, length = 50):
@@ -625,13 +630,15 @@ def run_all(in_file, B_file, out_dir, mode = 3, length = 50):
 								file_base + '_mainDict' + file_ext)
 
 
-		
+		# This is a preprocessing step, removing duplications to makae things more efficient (seems to cut # of candidates by about 1/2). 
+		# This step is not made if we want a Histogram, becuase
+		# it may modify in a way hindering subsequent analysis of thee Histogram.
 		print_step("Start new_SINES_Initial_filter_rec")
 		new_SINES_Initial_filter_rec(file_base + '_sineBarcode' + file_ext,
 									 file_base + '_potentialNewSINE' + file_ext,
 									 file_base + '_inheritedSINE' + file_ext)
 
-
+		# We are currently not running this part, but rather mode 4+5 - so, none of the previous steps are ran as well.
 		print_step("Start SINES_new_or_inherited")
 		SINES_new_or_inherited(file_base + '_mainDict' + file_ext,
 							   file_base + '_potentialNewSINE' + file_ext,
@@ -641,12 +648,8 @@ def run_all(in_file, B_file, out_dir, mode = 3, length = 50):
 		print_step("DONE ALL!")
 	
 	#create the dictionary for histogram  
-	if(mode == 4):
-		print_step("Start build_dictionary")
-		build_dictionary_for_histogram(file_base + '_sineBarcode' + file_ext,
-								file_base + '_mainDictHistogram' + file_ext)
+	# mode == 4 moved to gen_hist_dict.py
 
-		return
 	# part 2 - identify new sines
 	
 	if mode == 5:#after we have the dictionary
