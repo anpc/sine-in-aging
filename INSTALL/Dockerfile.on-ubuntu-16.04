@@ -26,6 +26,9 @@ WORKDIR /tmp
 COPY python.sh python.sh
 RUN ./python.sh
 
+COPY pip.sh pip.sh
+RUN ./pip.sh
+
 COPY libraries.sh libraries.sh
 RUN ./libraries.sh
 

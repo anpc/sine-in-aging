@@ -7,4 +7,5 @@ cat /etc/lsb-release  # Just to see which Ubuntu version we're on
 
 cd "$(dirname "$0")"  # the directory of this script
 ./python.sh
+./pip.sh
 ./libraries.sh
