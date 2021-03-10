@@ -589,10 +589,9 @@ def run_part_1(in_file, B_file, out_dir):
 #mode 6 - filter the histogram with the second mouse data
 #length- size of histogram
 def run_all(in_file, B_file, out_dir, mode = 3, length = 50):
-	
-		
 	file_ext = None
-	for ext in ['.fastq', '.fastq.gz', '.fastq.bz2']:
+	for ext in ['.fastq', '.fastq.gz', '.fastq.bz2', 
+	            '.fasta', '.fasta.gz', '.fasta.bz2']:
 		if in_file.endswith(ext):
 			file_ext = ext
 			break
