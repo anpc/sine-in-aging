@@ -55,9 +55,9 @@ def filter_potential_sines_and_locations(in_file_unify, in_file_sine, out_file_w
     fuzziness = tre.Fuzzyness(maxerr=maxerr)
 
 
-    with open_any(in_file_unify, "rt") as handle_read, \
-            open_any(out_file_with_sine, "wt") as handle_write_sine, \
-            open_any(out_file_location, "wt") as handle_write_loc:
+    with open_compressed(in_file_unify, "rt") as handle_read, \
+            open_compressed(out_file_with_sine, "wt") as handle_write_sine, \
+            open_compressed(out_file_location, "wt") as handle_write_loc:
 
         records = gene_records_parse(handle_read)
 
@@ -76,9 +76,9 @@ def filter_potential_sines_and_locations(in_file_unify, in_file_sine, out_file_w
 # It creates a new fastq file contains all the records from file 1 so that the sequence of each record
 # represents the barcode of the sine in the corresponding row.
 def filter_potential_sines_barcode(sine_barcode_len, in_file_sine, in_file_location, out_file_sine_prefix):
-    with open_any(in_file_sine, "rt") as handle_read_sine, \
-            open_any(in_file_location, "rt") as handle_read_location, \
-            open_any(out_file_sine_prefix, "wt") as handle_write_barcode:
+    with open_compressed(in_file_sine, "rt") as handle_read_sine, \
+            open_compressed(in_file_location, "rt") as handle_read_location, \
+            open_compressed(out_file_sine_prefix, "wt") as handle_write_barcode:
         records = gene_records_parse(handle_read_sine)
         for rec, location in zip(tqdm(records), handle_read_location):
             sine_location = location.split(",")  # gets string and delimiter (',' in this case) returns list of strings
@@ -104,9 +104,9 @@ def filter_potential_sines_barcode(sine_barcode_len, in_file_sine, in_file_locat
 # it creates a new file containing the sine suspicious as new and another new file contains the
 # inherited sines
 def new_SINES_Initial_filter_rec(in_file_sine_prefix, out_file_potential_new, out_file_inherited):
-    with open_any(in_file_sine_prefix, "rt") as handle_read_prefix, \
-            open_any(out_file_potential_new, "wt") as handle_potential_new, \
-            open_any(out_file_inherited, "wt") as handle_write_inherited:
+    with open_compressed(in_file_sine_prefix, "rt") as handle_read_prefix, \
+            open_compressed(out_file_potential_new, "wt") as handle_potential_new, \
+            open_compressed(out_file_inherited, "wt") as handle_write_inherited:
 
         records = gene_records_parse(handle_read_prefix)
         new_dict = {}
@@ -178,7 +178,7 @@ def build_dictionary(in_file_prefix, out_file_dict, sine_barcode_len=36, maxerr=
         main_dict[main_key] = {}
 
     print_step("Start build_dictionary: fill with records")
-    with open_any(in_file_prefix, "rt") as handle_read_prefix:
+    with open_compressed(in_file_prefix, "rt") as handle_read_prefix:
         records = gene_records_parse(handle_read_prefix)
         for rec in tqdm(records):
             # barcode_parts_list = barcode_parts(rec, main_key_len)
@@ -190,7 +190,7 @@ def build_dictionary(in_file_prefix, out_file_dict, sine_barcode_len=36, maxerr=
                 sec_dict[str_barc] = rec.id
 
     print_step("Start build_dictionary: write to file")
-    with open_any(out_file_dict, "wb") as handle_dict:
+    with open_compressed(out_file_dict, "wb") as handle_dict:
         pickle.dump(main_dict, handle_dict, protocol=pickle.HIGHEST_PROTOCOL)
         handle_dict.flush()
 
@@ -216,7 +216,7 @@ def build_dictionary_for_histogram(in_file_prefix, out_file_dict, sine_barcode_l
         main_dict[main_key] = {}
 
     print_step("Start build_dictionary: fill with records")
-    with open_any(in_file_prefix, "rt") as handle_read_prefix:
+    with open_compressed(in_file_prefix, "rt") as handle_read_prefix:
         records = gene_records_parse(handle_read_prefix)
         for rec in tqdm(records):
             # barcode_parts_list = barcode_parts(rec, main_key_len)
@@ -230,7 +230,7 @@ def build_dictionary_for_histogram(in_file_prefix, out_file_dict, sine_barcode_l
     print_step("Start build_dictionary: write to file")
     print("Peak memory (MiB):",
           int(getrusage(RUSAGE_SELF).ru_maxrss / 1024))
-    with open_any(out_file_dict, "wb") as handle_dict:
+    with open_compressed(out_file_dict, "wb") as handle_dict:
         pickle.dump(main_dict, handle_dict, protocol=pickle.HIGHEST_PROTOCOL)
         handle_dict.flush()
 
@@ -443,9 +443,9 @@ def new_SINES_filter(in_file_initial_filtering, out_file_new_SINES, out_file_inh
             'write_i': 0
         })
 
-    with open_any(in_file_initial_filtering, "rt") as handle_read_initial_filtering, \
-            open_any(out_file_new_SINES, "wt") as handle_write_new, \
-            open_any(out_file_inherited_SINES, "wt") as handle_write_inherited:
+    with open_compressed(in_file_initial_filtering, "rt") as handle_read_initial_filtering, \
+            open_compressed(out_file_new_SINES, "wt") as handle_write_new, \
+            open_compressed(out_file_inherited_SINES, "wt") as handle_write_inherited:
 
         records = gene_records_parse(handle_read_initial_filtering)
         rec_i = 0
@@ -519,7 +519,7 @@ def new_SINES_filter_for_histogram(in_file_initial_filtering, main_dict, key_siz
             'write_i': 0
         })
 
-    with open_any(in_file_initial_filtering, "rt") as handle_read_initial_filtering:
+    with open_compressed(in_file_initial_filtering, "rt") as handle_read_initial_filtering:
 
         records = gene_records_parse(handle_read_initial_filtering)
         rec_i = 0
@@ -580,7 +580,7 @@ def new_SINES_filter_for_graph(in_file_initial_filtering, main_dict,i=0, key_siz
                                    maxerr=3):
     fuzziness = tre.Fuzzyness(maxerr=maxerr)
 
-    with open_any(in_file_initial_filtering, "rt") as handle_read_initial_filtering:
+    with open_compressed(in_file_initial_filtering, "rt") as handle_read_initial_filtering:
 
         records = gene_records_parse(handle_read_initial_filtering)
 
@@ -590,7 +590,7 @@ def new_SINES_filter_for_graph(in_file_initial_filtering, main_dict,i=0, key_siz
 def SINES_new_or_inherited(in_file_dict,
                            in_file_initial_filtering, out_file_new_SINES, out_file_inherited_SINES):
     print_step("Start SINES_new_or_inherited: load dict")
-    with open_any(in_file_dict, "rb") as handle_dict:
+    with open_compressed(in_file_dict, "rb") as handle_dict:
         dict = pickle.load(handle_dict)
 
     print_step("Start new_SINES_filter")
@@ -600,7 +600,7 @@ def SINES_new_or_inherited(in_file_dict,
 # in_file_dict- the dictionary, in_file_initial_filtering - the barcodes, distribution_of_neighbors- list for counting the neighbors of barcods.
 def SINES_graph_of_neighbors(in_file_dict, in_file_initial_filtering,i=0):
     print_step("Start SINES_new_or_inherited: load dict")
-    with open_any(in_file_dict, "rb") as handle_dict:
+    with open_compressed(in_file_dict, "rb") as handle_dict:
         dict = pickle.load(handle_dict)
 
     print_step("Start new_SINES_filter")
@@ -651,8 +651,8 @@ def run_part_1(in_file, B_file, out_dir):
                                          file_base + '_sineLocation' + file_ext)
 
 def get_sines_file(_withSineFile, _sineLocationFile):
-    with open_any(_withSineFile, "rt") as handle_read_sine, \
-            open_any(_sineLocationFile, "rt") as handle_read_location, \
+    with open_compressed(_withSineFile, "rt") as handle_read_sine, \
+            open_compressed(_sineLocationFile, "rt") as handle_read_location, \
             open("sinesFile2.txt", "a") as sinesFile:
         records = gene_records_parse(handle_read_sine)
         for rec, location in zip(tqdm(records), handle_read_location):

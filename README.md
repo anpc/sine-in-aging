@@ -11,7 +11,7 @@ Our particular FASTQ inputs don't wrap lines, so contain exactly 4 lines per rec
 
 .fastq.gz, .fastq.zst - FASTQ file, compressed with off-the-shelf compression tools (gzip, zstd).
 
-We have a function `open_any()` that does de/compression automatically, depending on file extension.
+We have a function `open_compressed()` that does de/compression automatically, depending on file extension.
 
 # Install tools
 
@@ -78,7 +78,7 @@ Bash then replaces the `<(...)` with a special file name like `/dev/fd/63`.
 
 The neat thing is split_recompress.py isn't even aware anything special happened, it asks operating system to open the file name given to it, and gets back the pipe!
 
-- One limitation is that `open_any()` function can't detect input compression from file extension (`/dev/fd/NN` has no extension).
+- One limitation is that `open_compressed()` function can't detect input compression from file extension (`/dev/fd/NN` has no extension).
   (But we can always inset `| gunzip --stdout` / `| gzip --stdout -2` process...)
   And split_recompress.py assumes input is always in .gz format.
 

@@ -41,7 +41,7 @@ def file_base_and_ext(filename):
 
 
 # Open gz/bzip/fasta/fastq file with correct function according to filename ending
-def open_any(filename, mode):
+def open_compressed(filename, mode):
     if filename.endswith('.bz2'):
         # 't' flag is not supported in Python2 for bz2
         mode = mode.replace('t', '')

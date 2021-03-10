@@ -24,7 +24,7 @@ from Bio.SeqRecord import SeqRecord
 [in_fname] = sys.argv[1:]
 def write_fastq_to_stdout():
 	log('About to transform ',in_fname)
-	with gene_lib.open_any(in_fname, 'rt') as in_f1_handle:
+	with gene_lib.open_compressed(in_fname, 'rt') as in_f1_handle:
 		records = SeqIO.parse(in_f1_handle, format="fasta")
 		
 		for (rec) in records:

@@ -18,7 +18,7 @@ def filter_potential_sines(in_fname, sine_string, sine_header=67, maxerr=19, rev
     Finds candidate SINEs with a certain distance from a prefix length.
     To be used for preliminary screening (input for later steps).
     """
-    with gene_lib.open_any(in_fname, 'rt') as in_file_handle:
+    with gene_lib.open_compressed(in_fname, 'rt') as in_file_handle:
         records = SeqIO.parse(in_file_handle, format="fastq")
         re = tre.compile(sine[:sine_header], tre.EXTENDED)
         fuzziness = tre.Fuzzyness(maxerr=maxerr)

@@ -81,9 +81,9 @@ def merged_paired_ends(records1, records2):
 def write_merged_to_stdout():
     # We assume for now all records match. Generally, need to verify.
     log('About to merge ',in_fname1, in_fname2)
-    with gene_lib.open_any(in_fname1, 'rt') as in_f1_handle:
+    with gene_lib.open_compressed(in_fname1, 'rt') as in_f1_handle:
         records1 = SeqIO.parse(in_f1_handle, format="fastq")
-        with gene_lib.open_any(in_fname2, 'rt') as in_f2_handle:
+        with gene_lib.open_compressed(in_fname2, 'rt') as in_f2_handle:
             records2 = SeqIO.parse(in_f2_handle, format="fastq")
             merged = merged_paired_ends(records1, records2)
             Bio.SeqIO.write(merged, handle=sys.stdout, format='fastq')
