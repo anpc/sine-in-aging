@@ -651,16 +651,7 @@ def run_all(in_file, B_file, out_dir, mode = 3, length = 50):
 
 	# part 2 - identify new sines
 	
-	if mode == 5:#after we have the dictionary
-		distribution_of_neighbors = [0]*length
-		print_step("Start SINES_new_or_inherited histogram")
-		SINES_histogram_of_neighbors(file_base + '_mainDictHistogram' + file_ext,
-									 file_base + '_sineBarcode' + file_ext,
-									 file_base + '_NewSINE' + file_ext,
-									 distribution_of_neighbors, length)
-		save_histogram(distribution_of_neighbors, file_base)
-		return
-	
+	#mode == 5 moved to build_hist.py, to facilitate paralelization which was impossile as is via organized_all due to naming conventions
 
 	#crossing - the files names need to be the same and start with 'wt' or 'old'
 	if mode == 6:
