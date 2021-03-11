@@ -174,16 +174,17 @@ def gene_records_parse(file_handle, format = None):
 def gene_record_write(rec, file_handle, format = None):
     assert format == 'fasta' or format == 'fastq' or format == None
 
-    # Fallback to Bio using the same API - for testing
-    if USE_BIO:
-        if format == None:
-            format = BIO_TYPE
-        SeqIO.write(rec, file_handle, format)
-
-    if format == None and rec.format != None:
+    # TODO: it makes no sense to decide on format here when the file extension
+    #   is already decided by callers.
+    if format == None:
         format = rec.format
 
     assert format != None
+
+    # Fallback to Bio using the same API - for testing
+    if USE_BIO:
+        SeqIO.write(rec, file_handle, format)
+
 
     # fasta format example:
     #   >EAS54_6_R1_2_1_413_324
