@@ -67,7 +67,7 @@ def write_hist_file():
     maxerr = 3
     
     file_ext = None
-    for ext in ['.fastq', '.fastq.gz', '.fastq.bz2']:
+    for ext in ['.fastq', '.fastq.gz', '.fastq.bz2', '.fasta', '.fasta.gz', '.fasta.bz2']:
         if candidate_barcodes.endswith(ext):
             file_ext = ext
             break
@@ -98,7 +98,7 @@ def write_hist_file():
                  
 
     # save histogram 
-    with open_compressed( file_base + '_histogram', "wb") as handle_hist:
+    with open(file_base + '_histogram.pickle', "wb") as handle_hist:
         pickle.dump(distribution_of_neighbors, handle_hist, protocol=pickle.HIGHEST_PROTOCOL)
     return
 

@@ -176,7 +176,7 @@ def build_dictionary_for_histogram(in_file_prefix, out_file_dict, sine_barcode_l
 					sec_dict[str_barc].append(rec.id)
 					
 
-	print_step("build_dictionary_for_histogram: write to file")
+	print_step(f"build_dictionary_for_histogram: writing '{out_file_dict}")
 	with open_compressed(out_file_dict, "wb") as handle_dict:
 		pickle.dump(main_dict, handle_dict, protocol=pickle.HIGHEST_PROTOCOL)
 		handle_dict.flush()
@@ -475,8 +475,8 @@ def run_part_1(in_file, B_file, out_dir):
 
 	print_step("Start filter_potential_sines_and_locations")
 	filter_potential_sines_and_locations(in_file, B_file,
-										 file_base + '_withSine' + file_ext,
-										 file_base + '_sineLocation' + file_ext)
+		file_base + '_withSine.fasta.gz',
+		file_base + '_sineLocation.gz')
 
 #mode 1 - finds the SINEs, mode 2 - creates the barcodes file,
 #mode 2 - takes reads with SINEs file, and generates correseponding files of sineLocation (rel. sine location in read) and sineBarcode
@@ -506,16 +506,17 @@ def run_all(in_file, B_file, out_dir, mode = 3, length = 50):
 	if (mode == 1):
 		print_step("Start filter_potential_sines_and_locations")
 		filter_potential_sines_and_locations(in_file, B_file,
-											 file_base + '_withSine' + file_ext,
-											 file_base + '_sineLocation' + file_ext)
+			file_base + '_withSine.fasta.gz',
+			file_base + '_sineLocation.gz')
 		return
 
 	# part 1 - detect barcodes of potential sines
 	if (mode == 2): 
 		print_step("Start filter_potential_sines_barcode")
-		filter_potential_sines_barcode(36, file_base + '_withSine' + file_ext,
-										   file_base + '_sineLocation' + file_ext,
-										   file_base + '_sineBarcode' + file_ext)
+		filter_potential_sines_barcode(36, 
+			file_base + '_withSine.fasta.gz',
+			file_base + '_sineLocation.gz',
+			file_base + '_sineBarcode.fasta.gz')
 		return 
 		
 	#create the dictionary for histogram  
@@ -526,32 +527,34 @@ def run_all(in_file, B_file, out_dir, mode = 3, length = 50):
 	#mode == 5 moved to build_hist.py, to facilitate paralelization which was impossile as is via organized_all due to naming conventions
 
 	#crossing - the files names need to be the same and start with 'wt' or 'old'
+	# TODO: restore the functionality of creating NewSINE, that was previously implemented as part of mode 3
+	# in mode 4. Otherwise, mode == 6 can not be ran. 
 	if mode == 6:
 		distribution_of_neighbors = [0]*length
 		if file_base[1 +len(out_dir):3+len(out_dir)] == 'wt':
 			name = out_dir + '/' +"wtCrossingOldDict"+ file_base[3+len(out_dir):]
-			oldDict = out_dir + '/old'+file_base[3+len(out_dir):] + '_mainDictHistogram' + file_ext
-			wtNew = file_base + '_NewSINE' + file_ext
+			oldDict = out_dir + '/old'+file_base[3+len(out_dir):] + '_mainDictHistogram.pickle.gz'
+			wtNew = file_base + '_NewSINE.fasta.gz'
 
 			print_step("Start wtCrossingOldDict histogram")
 			
 			SINES_histogram_of_neighbors(oldDict,
 										 wtNew,
-										 name + '_NewSINE' + file_ext,
+					name + '_NewSINE.fasta.gz',
 										 distribution_of_neighbors, length)
 			save_histogram(distribution_of_neighbors, name)
 			filtering(file_base+"_distribution_of_neighbors.txt", distribution_of_neighbors[0], file_base)
 			
 		else:
 			name = out_dir + '/' +"oldCrossingWtDict"+ file_base[4+len(out_dir):]
-			wtDict = out_dir + '/wt'+file_base[4+len(out_dir):] + '_mainDictHistogram' + file_ext
-			oldNew = file_base+ '_NewSINE' + file_ext
+			wtDict = out_dir + '/wt'+file_base[4+len(out_dir):] + '_mainDictHistogram.pickle.gz'
+			oldNew = file_base+ '_NewSINE.fasta.gz'
 
 			print_step("Start wtCrossingOldDict histogram")
 			
 			SINES_histogram_of_neighbors(wtDict,
 										 oldNew,
-										 name + '_NewSINE' + file_ext,
+				name + '_NewSINE.fasta.gz',
 										 distribution_of_neighbors, length)
 			save_histogram(distribution_of_neighbors, name)
 			filtering(file_base+"_distribution_of_neighbors.txt", distribution_of_neighbors[0], file_base)
