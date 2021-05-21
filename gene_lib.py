@@ -171,15 +171,8 @@ def gene_records_parse(file_handle, format = None):
 # rec - Record to write
 # file_handle - Handle after open/gzip.open/etc.
 # format - 'fasta' or 'fastq', if None then will try to detect format from record 
-def gene_record_write(rec, file_handle, format = None):
-    assert format in {'fasta', 'fasta-2line', 'fastq', None}
-
-    # TODO: it makes no sense to decide on format here when the file extension
-    #   is already decided by callers.
-    if format == None:
-        format = rec.format
-
-    assert format != None
+def gene_record_write(rec, file_handle, format):
+    assert format in {'fasta', 'fasta-2line', 'fastq'}
 
     # Fallback to Bio using the same API - for testing
     if USE_BIO:
