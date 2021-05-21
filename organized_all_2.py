@@ -65,7 +65,7 @@ def filter_potential_sines_and_locations(in_file_unify, in_file_sine, out_file_w
             match = re.search(str(rec.seq), fuzziness)
             if match:
                 sine_location = match.groups()
-                gene_record_write(rec, handle_write_sine, 'fasta')
+                gene_record_write(rec, handle_write_sine, 'fasta-2line')
                 handle_write_loc.write(",".join([str(i) for i in sine_location[0]]) + "\n")
 
 
@@ -671,6 +671,8 @@ def get_sines_file(_withSineFile, _sineLocationFile):
 
 def run_all(in_file, B_file, out_dir, mode=3):
     file_ext = None
+    # TODO: allow fasta on input
+    # TODO: don't guess on output, hard-code extensions & formats! 
     for ext in ['.fastq', '.fastq.gz', '.fastq.bz2']:
         if in_file.endswith(ext):
             file_ext = ext

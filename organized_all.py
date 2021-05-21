@@ -45,7 +45,7 @@ def filter_potential_sines_and_locations_proc(recs, re, fuzziness, handle_write_
 
 def filter_potential_sines_and_locations_write(rec, sine_location, handle_write_sine, handle_write_loc):
 
-	gene_record_write(rec, handle_write_sine, 'fasta')
+	gene_record_write(rec, handle_write_sine, 'fasta-2line')
 	handle_write_loc.write(",".join([str(i) for i in sine_location[0]]) + "\n")
 
 	handle_write_sine.flush()
@@ -107,7 +107,7 @@ def filter_potential_sines_barcode(sine_barcode_len, in_file_sine, in_file_locat
 	    # TODO: check whether we are not off-by-one
             if(sine_location[0] >= sine_barcode_len):
                 new_rec = rec[sine_location[0] - sine_barcode_len: sine_location[0]]
-                gene_record_write(new_rec, handle_write_barcode)
+                gene_record_write(new_rec, handle_write_barcode, 'fasta-2line')
 
 ############## END of part 1 ##############
 
@@ -275,7 +275,7 @@ def new_SINES_filter_proc_histogram(recs, main_dict, noDuplicate, key_size, fuzz
 				print_step(count)
 			
 			if len(match) == 1:
-				gene_record_write(rec, handle_noDuplicate)
+				gene_record_write(rec, handle_noDuplicate, 'fasta-2line')
 				
 			if(len(match)>= length):
 				distribution_of_neighbors[length-1] = distribution_of_neighbors[length-1] + 1
@@ -295,9 +295,9 @@ def new_SINES_filter_write(q, handle_write_inherited, handle_write_new, wait_non
         (rec, match) = obj
 
         if match:
-            gene_record_write(rec, handle_write_inherited)
+            gene_record_write(rec, handle_write_inherited, 'fasta-2line')
         else:
-            gene_record_write(rec, handle_write_new)
+            gene_record_write(rec, handle_write_new, 'fasta-2line')
 
     # handle_write_inherited.flush()
     # handle_write_new.flush()

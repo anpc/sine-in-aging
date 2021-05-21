@@ -110,7 +110,7 @@ def record_format_get(line_0):
 #	- Gene: 170,000 rec/sec
 #	- Using mgzip (instead of gzip) doesn't change the numbers for this test
 def gene_records_parse(file_handle, format = None):
-    assert format == 'fasta' or format == 'fastq' or format == None
+    assert format in {'fasta', 'fasta-2line', 'fastq', None}
 
     # Fallback to Bio using the same API - for testing
     if USE_BIO:
@@ -131,7 +131,7 @@ def gene_records_parse(file_handle, format = None):
         # fasta format example:
         #   >EAS54_6_R1_2_1_413_324
         #   CCCTTCTTGTCTTCAGCGTTTCTCC
-        if format == 'fasta':
+        if format in {'fasta', 'fasta-2line'}:
             if line_i == 0:
                 assert line[0] == '>'
                 rec = GeneRecord()
@@ -172,7 +172,7 @@ def gene_records_parse(file_handle, format = None):
 # file_handle - Handle after open/gzip.open/etc.
 # format - 'fasta' or 'fastq', if None then will try to detect format from record 
 def gene_record_write(rec, file_handle, format = None):
-    assert format == 'fasta' or format == 'fastq' or format == None
+    assert format in {'fasta', 'fasta-2line', 'fastq', None}
 
     # TODO: it makes no sense to decide on format here when the file extension
     #   is already decided by callers.
@@ -189,7 +189,8 @@ def gene_record_write(rec, file_handle, format = None):
     # fasta format example:
     #   >EAS54_6_R1_2_1_413_324
     #   CCCTTCTTGTCTTCAGCGTTTCTCC
-    if format == 'fasta':
+    # For simplicity, always write 'fasta-2line' format, never wrap lines as 'fasta' allows.
+    if format in {'fasta', 'fasta-2line'}:
         file_handle.write('>' + rec.id + '\n')
         file_handle.write(str(rec.seq) + '\n')
 
