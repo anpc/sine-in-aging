@@ -171,9 +171,9 @@ def build_dictionary_for_histogram(in_file_prefix, out_file_dict, sine_barcode_l
 				str_barc_part = str(rec_part.seq)
 				sec_dict = main_dict[str_barc_part]
 				if sec_dict.get(str_barc) is None:
-					sec_dict[str_barc] = [rec.id]
+					sec_dict[str_barc] = {rec.id}
 				else:
-					sec_dict[str_barc].append(rec.id)
+					sec_dict[str_barc].add(rec.id)
 					
 
 	print_step(f"build_dictionary_for_histogram: writing '{out_file_dict}")
@@ -539,9 +539,9 @@ def run_all(in_file, B_file, out_dir, mode = 3, length = 50):
 			print_step("Start wtCrossingOldDict histogram")
 			
 			SINES_histogram_of_neighbors(oldDict,
-										 wtNew,
+					wtNew,
 					name + '_NewSINE.fasta.gz',
-										 distribution_of_neighbors, length)
+					distribution_of_neighbors, length)
 			save_histogram(distribution_of_neighbors, name)
 			filtering(file_base+"_distribution_of_neighbors.txt", distribution_of_neighbors[0], file_base)
 			
@@ -553,9 +553,9 @@ def run_all(in_file, B_file, out_dir, mode = 3, length = 50):
 			print_step("Start wtCrossingOldDict histogram")
 			
 			SINES_histogram_of_neighbors(wtDict,
-										 oldNew,
+				oldNew,
 				name + '_NewSINE.fasta.gz',
-										 distribution_of_neighbors, length)
+				distribution_of_neighbors, length)
 			save_histogram(distribution_of_neighbors, name)
 			filtering(file_base+"_distribution_of_neighbors.txt", distribution_of_neighbors[0], file_base)
 
