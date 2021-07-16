@@ -31,6 +31,7 @@ from gene_lib import *
 
 #TODO: copied from organized_all.py - is there a better way? 
 def barcode_parts(record, part_len):
+    """Returns non-overlapping windows."""
     barcode = record.seq
     barcode_len = len(barcode)
 
@@ -42,25 +43,40 @@ def barcode_parts(record, part_len):
         yield rec_part
 
 def count_neighbors(main_dict, maxerr, rec):
+    """Counts how many neighbors `rec` has.
+    
+    Note that for parllelization this script may process a subset of `rec`
+    but the full `main_dict` so this gives the correct total for this `rec`.
+    """
     fuzziness = tre.Fuzzyness(maxerr=maxerr)
     key_size = 9
     str_barc = str(rec.seq)
-    re = tre.compile(str_barc, tre.EXTENDED)
+    #TODO: we assume maxerr = 3 here. Appending the 3+1 Y's will ensure anchoring from the end - $ seems to be buggy
+    re = tre.compile('^'+str_barc + '1234', tre.EXTENDED)
     barc_parts_list = barcode_parts(rec, key_size)
     
-    neighbors = []
+    neighbors = set()
+    dist_hist = [0] * 4
+    #print('considering id '+rec.id)
     for rec_part in barc_parts_list:
         str_barc_part = str(rec_part.seq)
         sec_dict = main_dict[str_barc_part]
         for key, val in sec_dict.items():
-            if re.search(str(key), fuzziness):
-                # val is a list of record id's having exactly the same barcode.
-                # It suffices, because we just want tonot count the same barcode in different buckets. The barcode is
+            m = re.search(str(key)+'1234', fuzziness)
+            if m:
+                # val is a set of record id's having exactly the same barcode.
+                # It suffices, because we just want to not count the same barcode in different buckets. The barcode is
                 # inserted with the same list of id's into every window
-                if ((val[0] in neighbors) == False):
-                    neighbors += val
+                for v in val:
+                    if ((v in neighbors) == False):
+                        dist_hist[m.cost] += 1
+                     #   print('adding neighbor '+v)
+                     #   print('with cost ',m.cost, (m.numdel, m.numins, m.numsub))
+                    neighbors.add(v)
 
-    return len(neighbors)	
+    if len(neighbors) > 1000:
+        print(str_barc+' has ',dist_hist)
+    return len(neighbors)
 
 # This is copied and adapted from organized_all - may be a better way in terms of modularity
 def write_hist_file():
@@ -100,6 +116,7 @@ def write_hist_file():
     # save histogram 
     with open(file_base + '_histogram.pickle', "wb") as handle_hist:
         pickle.dump(distribution_of_neighbors, handle_hist, protocol=pickle.HIGHEST_PROTOCOL)
+        print("Saved histogram to", file_base + '_histogram.pickle')
     return
 
 ### MAIN ###
