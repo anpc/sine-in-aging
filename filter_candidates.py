@@ -35,16 +35,17 @@ def filter_potential_sines(in_fname, sine_string, sine_header=67, maxerr=19, rev
                 #sine_location = match.groups() #returns tuple of tuples (in this case: ((2,78), ) for example
                 SeqIO.write(rec, sys.stdout, 'fastq')
 
-# Writes to stdout, uncompresed
-[sine_fname, header_len, max_error, reverse_complement, merged_input_fname] = sys.argv[1:]
-if reverse_complement not in {"forward", "rc"}:
-    raise ValueError('reverse_complement arg must be "forward" or "rc"')
+if __name__ == '__main__':
+    # Writes to stdout, uncompresed
+    [sine_fname, header_len, max_error, reverse_complement, merged_input_fname] = sys.argv[1:]
+    if reverse_complement not in {"forward", "rc"}:
+        raise ValueError('reverse_complement arg must be "forward" or "rc"')
 
-log(f"About to screen {merged_input_fname} ({reverse_complement}) for {sine_fname} first {header_len} up to {max_error} err")
-sine = gene_lib.get_sine_forward(sine_fname) #"B1.fasta"
-filter_potential_sines(
-    in_fname=merged_input_fname,
-    sine_string=sine,
-    sine_header=int(header_len),
-    maxerr=int(max_error),
-    reverse_complement=(reverse_complement == "rc"))
+    log(f"About to screen {merged_input_fname} ({reverse_complement}) for {sine_fname} first {header_len} up to {max_error} err")
+    sine = gene_lib.get_sine_forward(sine_fname) #"B1.fasta"
+    filter_potential_sines(
+        in_fname=merged_input_fname,
+        sine_string=sine,
+        sine_header=int(header_len),
+        maxerr=int(max_error),
+        reverse_complement=(reverse_complement == "rc"))

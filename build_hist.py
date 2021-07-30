@@ -120,5 +120,6 @@ def write_hist_file():
     return
 
 ### MAIN ###
-[candidate_barcodes, global_dict, out_dir] = sys.argv[1:]
-write_hist_file()
+if __name__ == '__main__':
+    [candidate_barcodes, global_dict, out_dir] = sys.argv[1:]
+    write_hist_file()
